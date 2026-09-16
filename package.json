@@ -19,6 +19,9 @@
   "pi": {
     "extensions": [
       "./index.ts"
+    ],
+    "themes": [
+      "./themes/p-theme.json"
     ]
   },
   "scripts": {
@@ -61,6 +64,7 @@
     "index.ts",
     "src",
     "assets",
+    "themes",
     "README.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",

@@ -20,11 +20,15 @@ test('Pi discovers p-ui as exactly one extension', async () => {
     assert.equal(extensions.extensions.length, 1);
     assert.equal(resolve(extensions.extensions[0].path), resolve(root, 'index.ts'));
     assert.deepEqual(loader.getPrompts().prompts, []);
-    assert.deepEqual(loader.getThemes().themes, []);
+    const packageThemes = loader.getThemes().themes.filter((theme) => theme.sourcePath?.startsWith(root));
+    assert.equal(packageThemes.length, 1);
+    assert.equal(packageThemes[0].name, 'p-theme');
+    assert.equal(resolve(packageThemes[0].sourcePath), resolve(root, 'themes/p-theme.json'));
     assert.deepEqual(loader.getSkills().skills.filter((skill) => skill.filePath.startsWith(root)), []);
 
     const manifest = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
     assert.deepEqual(manifest.pi.extensions, ['./index.ts']);
+    assert.deepEqual(manifest.pi.themes, ['./themes/p-theme.json']);
   } finally {
     await rm(agentDir, { recursive: true, force: true });
   }

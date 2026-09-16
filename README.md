@@ -9,6 +9,7 @@ A single Pi extension that combines the interfaces previously distributed as Pi 
 - Persisted activity summaries, an `/activity` inspector, and configurable display density.
 - A minimal startup header with the Pi logo and installed Pi version.
 - A focused footer with project, session, Git branch, model, thinking level, and context usage.
+- The bundled `p-theme` dark palette for a consistent header, activity, footer, Markdown, diff, and syntax experience.
 - Pi Plan status at the start of the footer and the Codex Fast icon beside the model when those extensions are active.
 
 ## Install
@@ -24,6 +25,14 @@ pi install -l npm:@prjct.app/p-ui
 ```
 
 Remove `@prjct.app/pi-activity`, `@prjct.app/pi-header`, and `@prjct.app/pi-statusline` when migrating. Loading them alongside p-ui would register duplicate UI behavior and tool overrides.
+
+Select `p-theme` from `/settings`, or set it directly in `settings.json`:
+
+```json
+{
+  "theme": "p-theme"
+}
+```
 
 To test a local checkout:
 
