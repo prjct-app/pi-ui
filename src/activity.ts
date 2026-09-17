@@ -28,7 +28,7 @@ import {
 	applyToolResult,
 	finishRecord,
 	formatDuration,
-	resultText,
+	resultPreview,
 	snapshotRecord,
 	TOOL_VERBS,
 } from "./format.ts";
@@ -210,8 +210,8 @@ export default function activityMode(pi: ExtensionAPI) {
 				const record = ensureRecord(id, name, context.args as Record<string, unknown>);
 				if (!options.isPartial || context.isError) applyToolResult(record, result, context.isError);
 				else {
-					const preview = resultText(result);
-					if (preview) record.outputPreview = preview.slice(0, 2_000);
+					const preview = resultPreview(result);
+					if (preview) record.outputPreview = preview;
 				}
 				return renderExpandedToolResult(
 					name,
@@ -382,8 +382,8 @@ export default function activityMode(pi: ExtensionAPI) {
 
 	pi.on("tool_execution_update", (event) => {
 		const record = ensureRecord(event.toolCallId, event.toolName, event.args ?? {});
-		const preview = resultText(event.partialResult);
-		if (preview) record.outputPreview = preview.slice(0, 2_000);
+		const preview = resultPreview(event.partialResult);
+		if (preview) record.outputPreview = preview;
 	});
 
 	pi.on("tool_result", (event) => {

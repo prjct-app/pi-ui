@@ -52,6 +52,41 @@ export function activityCategory(name: string, args: Record<string, unknown>): A
 	return "other";
 }
 
+/** The activity view shows at most this many result lines. */
+export const PREVIEW_LINES = 5;
+const PREVIEW_CHARS = 2_000;
+/** Persisted history renders a target on one line; full heredoc commands reached 28KB each. */
+const SNAPSHOT_TARGET_CHARS = 240;
+
+/** First visible lines of a text, capped the way the old 2,000-character preview was. */
+export function previewText(text: string): string {
+	const lines = text.split("\n", PREVIEW_LINES).join("\n");
+	return lines.length > PREVIEW_CHARS ? `${lines.slice(0, PREVIEW_CHARS - 3)}…` : lines;
+}
+
+/**
+ * Preview of a (partial) tool result without joining its whole output. Streaming
+ * updates arrive per chunk; joining and trimming up to 50KB each time made long
+ * commands quadratic for a view that shows five lines.
+ */
+export function resultPreview(result: unknown): string {
+	if (!result || typeof result !== "object") return "";
+	const content = (result as { content?: unknown }).content;
+	if (!Array.isArray(content)) return "";
+	const parts: string[] = [];
+	const budget = { chars: 0 };
+	for (const item of content) {
+		if (!item || typeof item !== "object" || (item as { type?: unknown }).type !== "text") continue;
+		const text = (item as { text?: unknown }).text;
+		if (typeof text !== "string") continue;
+		const piece = text.slice(0, PREVIEW_CHARS * 2);
+		parts.push(piece);
+		budget.chars += piece.length;
+		if (budget.chars >= PREVIEW_CHARS * 2) break;
+	}
+	return previewText(parts.join("\n").trimStart());
+}
+
 export function resultText(result: unknown): string {
 	if (!result || typeof result !== "object") return "";
 	const content = (result as { content?: unknown }).content;
@@ -224,7 +259,7 @@ export function applyToolResult(record: ActivityRecord, result: unknown, isError
 	record.outcome = derived.outcome;
 	record.change = derived.change;
 	record.truncated = truncationState(result);
-	record.outputPreview = text.length > 2_000 ? `${text.slice(0, 1_997)}…` : text;
+	record.outputPreview = previewText(text);
 	if (status === "error" || status === "cancelled") record.errorMessage = compactError(text);
 }
 
@@ -239,7 +274,7 @@ export function snapshotRecord(record: ActivityRecord): ActivityRecordSnapshot {
 	return {
 		id: record.id,
 		name: record.name,
-		target: record.target,
+		target: record.target.length > SNAPSHOT_TARGET_CHARS ? `${record.target.slice(0, SNAPSHOT_TARGET_CHARS - 1)}…` : record.target,
 		category: record.category,
 		status,
 		startedAt: record.startedAt,

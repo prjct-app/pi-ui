@@ -382,3 +382,19 @@ test("non-TUI session lifecycle never calls terminal-only UI methods", () => {
 	h.emit("agent_settled");
 	h.emit("session_shutdown", { reason: "quit" });
 });
+
+test("streaming previews read only the visible head and persisted targets stay one line", async () => {
+	const { resultPreview, previewText, snapshotRecord, PREVIEW_LINES } = await import("../src/format.ts");
+	const long = Array.from({ length: 5_000 }, (_, index) => `line ${index}`).join("\n");
+	const preview = resultPreview({ content: [{ type: "text", text: `\n\n${long}` }, { type: "text", text: "tail" }] });
+	assert.equal(preview.split("\n").length, PREVIEW_LINES);
+	assert.match(preview, /^line 0\nline 1/);
+	assert.equal(previewText("x".repeat(5_000)).length, 1_998, "same cap as the old 2,000-character preview");
+	assert.equal(resultPreview({ content: [{ type: "image", data: "abc" }] }), "");
+	const snapshot = snapshotRecord({
+		id: "b1", name: "bash", target: `cat <<'EOF'\n${"y".repeat(28_000)}`, category: "run", status: "success",
+		startedAt: 1, durationMs: 2, args: {},
+	} as never);
+	assert.equal(snapshot.target.length, 240);
+	assert.match(snapshot.target, /…$/);
+});

@@ -17,7 +17,7 @@ import {
 	wrapTextWithAnsi,
 	type Component,
 } from "@earendil-works/pi-tui";
-import { cleanDisplayText, formatBytes, formatDuration, resultText, TOOL_VERBS } from "./format.ts";
+import { cleanDisplayText, formatBytes, formatDuration, PREVIEW_LINES, resultText, TOOL_VERBS } from "./format.ts";
 import type {
 	ActivityDensity,
 	ActivityRecord,
@@ -355,7 +355,7 @@ export class ActivityInspectorComponent implements Component {
 		if (record.errorMessage) lines.push(...wrapTextWithAnsi(`  ${this.theme.fg("error", record.errorMessage)}`, Math.max(1, width)));
 		if ("outputPreview" in record && record.outputPreview && !record.errorMessage) {
 			lines.push(safeLine(`  ${this.theme.fg("accent", "Result")}`, width));
-			for (const outputLine of record.outputPreview.split("\n").slice(0, 5)) {
+			for (const outputLine of record.outputPreview.split("\n").slice(0, PREVIEW_LINES)) {
 				lines.push(safeLine(`    ${this.theme.fg("dim", cleanDisplayText(outputLine))}`, width));
 			}
 		}
