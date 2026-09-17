@@ -19,12 +19,12 @@ The package declares exactly one Pi extension:
   "keywords": ["pi-package"],
   "pi": {
     "extensions": ["./index.ts"],
-    "themes": ["./themes/p-theme.json"]
+    "themes": ["./themes/prjct-theme.json"]
   }
 }
 ```
 
-`index.ts` is the sole Pi extension entry point. It composes internal activity, header, and status-line registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `p-theme` resource without introducing another extension.
+`index.ts` is the sole Pi extension entry point. It composes internal activity, header, and status-line registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
 
 ## Dependencies
 
@@ -38,7 +38,7 @@ Terminal-only behavior is guarded with `ctx.mode === "tui"`. Activity deliberate
 
 ## Published contents
 
-The `files` allowlist includes the single TypeScript entry point, internal runtime modules, logo assets, the `p-theme` theme resource, user documentation, and required licenses. Tests, repository settings, dependency folders, and Git history are excluded.
+The `files` allowlist includes the single TypeScript entry point, internal runtime modules, logo assets, the `prjct-theme` theme resource, user documentation, and required licenses. Tests, repository settings, dependency folders, and Git history are excluded.
 
 Run `npm run check:package` to inspect the prospective tarball before release.
 

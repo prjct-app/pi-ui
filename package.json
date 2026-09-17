@@ -21,7 +21,7 @@
       "./index.ts"
     ],
     "themes": [
-      "./themes/p-theme.json"
+      "./themes/prjct-theme.json"
     ]
   },
   "scripts": {

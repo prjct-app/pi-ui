@@ -31,7 +31,7 @@ export default function minimalFooter(pi: ExtensionAPI) {
 					const branch = footerData.getGitBranch();
 					const statuses = footerData.getExtensionStatuses();
 					const planStatus = statuses.get("plan-mode");
-					const fastStatus = statuses.get("openai-codex-fast");
+					const fastStatus = statuses.get("pi-fast-mode");
 					const modelName = ctx.model?.name ?? ctx.model?.id ?? "no model";
 					const model = fastStatus && visibleWidth(fastStatus) > 0 ? `${fastStatus} ${modelName}` : modelName;
 					const thinking = pi.getThinkingLevel();

@@ -73,7 +73,7 @@ test('minimal footer reads the live name after it is set or cleared', () => {
 
 test('minimal footer shows the Fast icon beside the model and keeps Plan first', () => {
   const statuses = new Map([
-    ['openai-codex-fast', ''],
+    ['pi-fast-mode', ''],
     ['plan-mode', 'plan'],
   ]);
   const footer = harness(undefined, statuses);
@@ -84,7 +84,7 @@ test('minimal footer shows the Fast icon beside the model and keeps Plan first',
 test('minimal footer hides unrelated extension statuses', () => {
   const statuses = new Map([
     ['pi-activity', '◇ ready · balanced'],
-    ['openai-codex-fast', ''],
+    ['pi-fast-mode', ''],
   ]);
   const footer = harness(undefined, statuses);
 
