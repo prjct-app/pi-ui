@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { stripVTControlCharacters } from "node:util";
 import { initTheme } from "@earendil-works/pi-coding-agent";
-import { visibleWidth } from "@earendil-works/pi-tui";
+import { MouseRegion, visibleWidth } from "@earendil-works/pi-tui";
 import activityMode from "../src/activity.ts";
 
 initTheme("dark", false);
@@ -136,7 +136,10 @@ test("compact rows are semantic, responsive, and expose rich details only when e
 	const tool = h.tools.get("read");
 	const args = { path: "src/example.ts", offset: 10 };
 	const pendingContext = renderContext({ toolCallId: "read-1", args });
-	assert.match(rendered(tool.renderCall(args, theme, pendingContext))[0] ?? "", /^◆ READ\s+src\/example\.ts\s+\d+ms$/);
+	const hiddenPending = tool.renderCall(args, theme, pendingContext);
+	assert.deepEqual(rendered(hiddenPending), []);
+	assert.deepEqual(new MouseRegion(hiddenPending, () => undefined).render(100), [],
+		"Pi may wrap a hidden renderer in MouseRegion without crashing");
 
 	h.emit("tool_execution_start", { toolCallId: "read-1", toolName: "read", args });
 	h.emit("tool_result", {
@@ -150,13 +153,8 @@ test("compact rows are semantic, responsive, and expose rich details only when e
 	h.emit("tool_execution_end", { toolCallId: "read-1", toolName: "read", result: result("const value = 1;\nexport { value };"), isError: false });
 
 	const completeContext = renderContext({ toolCallId: "read-1", args, isPartial: false });
-	const complete = rendered(tool.renderCall(args, theme, completeContext));
-	assert.match(complete[0] ?? "", /^✓ READ\s+src\/example\.ts\s+2 lines · \d+ms$/);
-	assert.ok(visibleWidth(complete[0] ?? "") <= 100);
-	assert.ok(visibleWidth(rendered(tool.renderCall(args, theme, completeContext), 34)[0] ?? "") <= 34);
-
-	const collapsed = tool.renderResult(result("const value = 1;\nexport { value };"), { expanded: false, isPartial: false }, theme, completeContext);
-	assert.deepEqual(rendered(collapsed), []);
+	assert.deepEqual(rendered(tool.renderCall(args, theme, completeContext)), []);
+	assert.deepEqual(rendered(tool.renderResult(result("const value = 1;\nexport { value };"), { expanded: false, isPartial: false }, theme, completeContext)), []);
 	const expanded = tool.renderResult(result("const value = 1;\nexport { value };"), { expanded: true, isPartial: false }, theme, completeContext);
 	const expandedLines = rendered(expanded).map((line) => line.trimStart());
 	assert.deepEqual(expandedLines.slice(0, 2), ["10 │ const value = 1;", "11 │ export { value };"]);
@@ -206,6 +204,10 @@ test("tool-specific outcomes include search counts, write size, edit deltas, err
 		h.emit("tool_result", { toolCallId: scenario.id, toolName: scenario.name, input: scenario.args, content: scenario.value.content, details: scenario.value.details, isError: false });
 		h.emit("tool_execution_end", { toolCallId: scenario.id, toolName: scenario.name, result: scenario.value, isError: false });
 		const row = h.tools.get(scenario.name).renderCall(scenario.args, theme, renderContext({ toolCallId: scenario.id, args: scenario.args, isPartial: false }));
+		if (scenario.name === "grep") {
+			assert.deepEqual(rendered(row), []);
+			continue;
+		}
 		assert.match(rendered(row)[0] ?? "", new RegExp(scenario.expected.replace(/[+]/g, "\\+")));
 	}
 
@@ -231,20 +233,19 @@ test("live widget, status, working message, and waiting state track parallel act
 	h.emit("agent_start");
 	h.emit("tool_execution_start", { toolCallId: "a", toolName: "read", args: { path: "src/a.ts" } });
 	h.emit("tool_execution_start", { toolCallId: "b", toolName: "bash", args: { command: "npm test" } });
-	assert.match(h.workingMessages.at(-1) ?? "", /2 active/);
+	assert.equal(h.workingMessages.at(-1), undefined);
 	const widgetFactory = h.widgets.at(-1)?.content;
 	const widget = widgetFactory({}, theme);
 	const widgetLines = rendered(widget).slice(0, 3).map((line) => line.trimEnd());
-	assert.equal(widgetLines[0], "◆ Working · 2 active · 0 completed");
-	assert.match(widgetLines[1] ?? "", /^  READ\s+src\/a\.ts\s+\d+ms$/);
-	assert.match(widgetLines[2] ?? "", /^  RUN\s+npm test\s+\d+ms$/);
+	assert.equal(widgetLines[0], "◆ READ · RUN");
+	assert.equal(widgetLines.length, 1);
 
 	h.emit("ui_prompt_start", { reason: "ui_prompt", kind: "confirm" });
-	assert.equal(h.workingMessages.at(-1), "Waiting for input…");
-	assert.match(h.statuses.at(-1)?.text ?? "", /waiting for input/);
+	assert.equal(h.workingMessages.at(-1), undefined);
+	assert.equal(h.statuses.at(-1)?.text, undefined);
 	h.emit("ui_prompt_end", { reason: "ui_prompt", kind: "confirm" });
 	h.emit("tool_execution_end", { toolCallId: "b", toolName: "bash", result: result("ok"), isError: false });
-	assert.equal(h.workingMessages.at(-1), "READ src/a.ts");
+	assert.equal(h.workingMessages.at(-1), undefined);
 	h.emit("tool_execution_end", { toolCallId: "a", toolName: "read", result: result("content"), isError: false });
 	h.emit("agent_settled");
 	assert.equal(h.workingMessages.at(-1), undefined);
@@ -252,8 +253,7 @@ test("live widget, status, working message, and waiting state track parallel act
 
 	h.emit("ui_prompt_start", { reason: "ui_prompt", kind: "custom" });
 	h.emit("ui_prompt_end", { reason: "ui_prompt", kind: "custom" });
-	assert.match(h.statuses.at(-1)?.text ?? "", /ready · balanced/);
-	assert.doesNotMatch(h.statuses.at(-1)?.text ?? "", /thinking/);
+	assert.equal(h.statuses.at(-1)?.text, undefined);
 });
 
 test("activity summary groups observed changes, verification, issues, and truncation", () => {
@@ -294,13 +294,8 @@ test("activity summary groups observed changes, verification, issues, and trunca
 	assert.equal(summaryEntry.data.records.find((record: any) => record.id === "test")?.outcome, "24 passed");
 
 	const renderer = h.renderers.get("activity-summary");
-	const collapsed = rendered(renderer({ data: summaryEntry.data }, { expanded: false }, theme));
-	assert.match(collapsed[0] ?? "", /^! Activity · 4 actions · 1 observed file · 1 issue/);
-	const expanded = rendered(renderer({ data: summaryEntry.data }, { expanded: true }, theme));
-	assert.ok(expanded.some((line) => line.includes("Changed · observed through edit/write")));
-	assert.ok(expanded.some((line) => line.includes("Verified")));
-	assert.ok(expanded.some((line) => line.includes("Issues")));
-	assert.ok(expanded.some((line) => line.includes("src/a.ts") && line.includes("+2 −1")));
+	assert.deepEqual(rendered(renderer({ data: summaryEntry.data }, { expanded: false }, theme)), []);
+	assert.deepEqual(rendered(renderer({ data: summaryEntry.data }, { expanded: true }, theme)), []);
 });
 
 test("activity inspector and density settings are interactive and session-persistent", async () => {
@@ -333,7 +328,7 @@ test("activity inspector and density settings are interactive and session-persis
 	const readArgs = { path: "a.ts" };
 	resumed.emit("tool_execution_start", { toolCallId: "r", toolName: "read", args: readArgs });
 	resumed.emit("tool_execution_end", { toolCallId: "r", toolName: "read", result: result("one"), isError: false });
-	const row = resumed.tools.get("read").renderCall(readArgs, theme, renderContext({ toolCallId: "r", args: readArgs, isPartial: false }));
+	const row = resumed.tools.get("read").renderCall(readArgs, theme, renderContext({ toolCallId: "r", args: readArgs, isPartial: false, expanded: true }));
 	assert.match(rendered(row)[0] ?? "", /1 line · \d+ms · inspect/);
 });
 
@@ -397,4 +392,25 @@ test("streaming previews read only the visible head and persisted targets stay o
 	} as never);
 	assert.equal(snapshot.target.length, 240);
 	assert.match(snapshot.target, /…$/);
+});
+
+test("rows rebuilt from history keep a still duration and reuse their render", () => {
+	const h = harness();
+	h.emit("session_start", { reason: "resume" });
+	const tool = h.tools.get("bash");
+	const args = { command: `cat > big.txt <<'EOF'\n${"línea 🚀\n".repeat(4_000)}EOF` };
+	const context = renderContext({ toolCallId: "bash-history", args, isPartial: false });
+	tool.renderCall(args, theme, context);
+	const row = tool.renderResult(result("done"), { expanded: false, isPartial: false }, theme, context);
+	const realNow = Date.now;
+	try {
+		const first = row.render(120);
+		Date.now = () => realNow() + 60_000;
+		const second = row.render(120);
+		assert.equal(second, first, "an unchanged historical row returns its cached lines");
+		assert.doesNotMatch(stripVTControlCharacters(first[0]!), /\d+(ms|s|m)\b/, "no invented duration without a measured one");
+		assert.ok(visibleWidth(first[0]!) <= 120);
+	} finally {
+		Date.now = realNow;
+	}
 });

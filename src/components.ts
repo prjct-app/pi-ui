@@ -17,7 +17,16 @@ import {
 	wrapTextWithAnsi,
 	type Component,
 } from "@earendil-works/pi-tui";
-import { cleanDisplayText, formatBytes, formatDuration, PREVIEW_LINES, resultText, TOOL_VERBS } from "./format.ts";
+import {
+	cleanDisplayText,
+	formatBytes,
+	formatDuration,
+	groupedActionLabels,
+	groupedActiveLines,
+	PREVIEW_LINES,
+	resultText,
+	TOOL_VERBS,
+} from "./format.ts";
 import type {
 	ActivityDensity,
 	ActivityRecord,
@@ -50,8 +59,12 @@ function joinColumns(left: string, right: string, width: number, minimumLeft = 1
 	return safeLine(`${clippedLeft}${padding}${right}`, width);
 }
 
-function recordDuration(record: ActivityRecord | ActivityRecordSnapshot): number {
+function recordDuration(record: ActivityRecord | ActivityRecordSnapshot): number | undefined {
 	if ("durationMs" in record && record.durationMs !== undefined) return record.durationMs;
+	// Rows rebuilt from history (resume, /reload) have a result but no measured
+	// duration. Counting from when the row was rebuilt showed a clock that never
+	// stopped and changed every row on every frame, defeating the render cache.
+	if (record.status !== "running") return undefined;
 	return Math.max(0, Date.now() - record.startedAt);
 }
 
@@ -70,6 +83,16 @@ function metadataFor(record: ActivityRecord, density: ActivityDensity): string {
 	return parts.filter(Boolean).join(" · ");
 }
 
+export class HiddenActivityComponent implements Component {
+	render(): string[] {
+		return [];
+	}
+
+	invalidate(): void {}
+}
+
+export const HIDDEN_ACTIVITY = new HiddenActivityComponent();
+
 export class ActivityRowComponent implements Component {
 	private record: ActivityRecord;
 	private theme: Theme;
@@ -81,12 +104,26 @@ export class ActivityRowComponent implements Component {
 		this.density = density;
 	}
 
+	private cache?: { key: string; lines: string[] };
+
 	update(record: ActivityRecord, theme: Theme): void {
 		this.record = record;
 		this.theme = theme;
+		this.cache = undefined;
 	}
 
 	render(width: number): string[] {
+		// Fullscreen mode renders the whole transcript every frame; without this
+		// cache every historical row re-measured its text on each spinner tick.
+		const { name, status, target } = this.record;
+		const key = `${width}\0${name}\0${status}\0${target}\0${metadataFor(this.record, this.density())}`;
+		if (this.cache?.key === key) return this.cache.lines;
+		const lines = this.renderRow(width);
+		this.cache = { key, lines };
+		return lines;
+	}
+
+	private renderRow(width: number): string[] {
 		const presentation = STATUS_PRESENTATION[this.record.status];
 		const symbol = this.theme.fg(presentation.color, presentation.symbol);
 		const verbText = (TOOL_VERBS[this.record.name] ?? this.record.name.toUpperCase()).slice(0, 8).padEnd(8);
@@ -103,23 +140,22 @@ export class ActivityRowComponent implements Component {
 		return [joinColumns(left, right, width, 22)];
 	}
 
-	invalidate(): void {}
+	invalidate(): void {
+		this.cache = undefined;
+	}
 }
 
 export class ActiveToolsWidget implements Component {
 	private readonly getRecords: () => ActivityRecord[];
-	private readonly getCompleted: () => number;
 	private readonly isWaiting: () => boolean;
 	private theme: Theme;
 
 	constructor(
 		getRecords: () => ActivityRecord[],
-		getCompleted: () => number,
 		isWaiting: () => boolean,
 		theme: Theme,
 	) {
 		this.getRecords = getRecords;
-		this.getCompleted = getCompleted;
 		this.isWaiting = isWaiting;
 		this.theme = theme;
 	}
@@ -130,15 +166,8 @@ export class ActiveToolsWidget implements Component {
 		}
 		const records = this.getRecords();
 		if (!records.length) return [];
-		const header = `${this.theme.fg("accent", "◆")} ${this.theme.bold("Working")} ${this.theme.fg("dim", `· ${records.length} active · ${this.getCompleted()} completed`)}`;
-		const lines = [safeLine(header, width)];
-		for (const record of records.slice(0, 3)) {
-			const verb = (TOOL_VERBS[record.name] ?? record.name.toUpperCase()).padEnd(8);
-			const elapsed = this.theme.fg("dim", formatDuration(Date.now() - record.startedAt));
-			lines.push(joinColumns(`  ${this.theme.fg("toolTitle", verb)}${this.theme.fg("toolOutput", record.target)}`, elapsed, width, 18));
-		}
-		if (records.length > 3) lines.push(safeLine(this.theme.fg("dim", `  … ${records.length - 3} more active`), width));
-		return lines;
+		const grouped = groupedActiveLines(records);
+		return [safeLine(`${this.theme.fg("accent", "◆")} ${this.theme.fg("muted", grouped.header)}`, width)];
 	}
 
 	invalidate(): void {}
@@ -175,10 +204,11 @@ export class ActivitySummaryComponent implements Component {
 		const successfulVerification = data.records.some((record) => record.category === "verify" && record.status === "success");
 		const symbol = issueCount ? "!" : "✓";
 		const symbolColor = issueCount ? "warning" : "success";
+		const groups = groupedActionLabels(data.records);
 		const middle = [
-			count(data.actionCount, "action"),
-			count(data.modifiedFiles.length, "observed file"),
-			issueCount ? count(issueCount, "issue") : successfulVerification ? "verified" : "clean",
+			...groups,
+			data.modifiedFiles.length ? count(data.modifiedFiles.length, "file") : undefined,
+			issueCount ? count(issueCount, "issue") : successfulVerification ? "verified" : undefined,
 			formatDuration(data.durationMs),
 		].filter(Boolean).join(" · ");
 		const title = `${this.theme.fg(symbolColor, symbol)} ${this.theme.fg("customMessageLabel", this.theme.bold(this.expanded ? "Activity report" : "Activity"))} ${this.theme.fg("muted", `· ${middle}`)}`;
