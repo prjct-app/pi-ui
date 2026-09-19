@@ -80,5 +80,8 @@
       "assets",
       "themes"
     ]
+  },
+  "dependencies": {
+    "@prjct.app/pi-tui-kit": "^0.1.0"
   }
 }

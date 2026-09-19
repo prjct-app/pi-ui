@@ -39,9 +39,12 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
 
   return {
     render(width = 160) {
-      const line = footer.render(width)[0];
+      const line = footer.render(width).at(-1);
       assert.ok(visibleWidth(line) <= width);
       return plain(line);
+    },
+    lines(width = 160) {
+      return footer.render(width).map(line => plain(line));
     },
     setSessionName(name) {
       sessionName = name;
@@ -71,14 +74,27 @@ test('minimal footer reads the live name after it is set or cleared', () => {
   assert.doesNotMatch(footer.render(), /Renamed session/);
 });
 
-test('minimal footer shows the Fast icon beside the model and keeps Plan first', () => {
+test('minimal footer shows the Fast icon beside the model', () => {
   const statuses = new Map([
     ['pi-fast-mode', ''],
-    ['plan-mode', 'plan'],
   ]);
   const footer = harness(undefined, statuses);
 
-  assert.match(footer.render(), /^plan · sample-project ·  main ·  Test model · high/);
+  assert.match(footer.render(), /^sample-project ·  main ·  Test model · high/);
+});
+
+test('active modes share one line right below the editor, and it disappears when none is on', () => {
+  const statuses = new Map([
+    ['mode:plan', '◆ plan 2/5'],
+    ['mode:agents', '◆ agents ● 1'],
+    ['plan-mode', 'old plan status'],
+  ]);
+  const footer = harness(undefined, statuses);
+  assert.deepEqual(footer.lines(), [' ◆ agents ● 1  ·  ◆ plan 2/5', footer.render()]);
+  assert.doesNotMatch(footer.render(), /plan/);
+
+  statuses.clear();
+  assert.equal(footer.lines().length, 1);
 });
 
 test('minimal footer hides unrelated extension statuses', () => {

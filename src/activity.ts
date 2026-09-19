@@ -14,9 +14,10 @@ import {
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Container, SettingsList, Text, type SettingItem } from "@earendil-works/pi-tui";
 import type { TSchema } from "typebox";
+import { openPanel } from "@prjct.app/pi-tui-kit";
+import { activityPanelSpec } from "./activity-panel.ts";
 import {
 	ActiveToolsWidget,
-	ActivityInspectorComponent,
 	ActivityRowComponent,
 	renderExpandedToolResult,
 } from "./components.ts";
@@ -205,9 +206,9 @@ export default function activityMode(pi: ExtensionAPI) {
 					if (preview) record.outputPreview = preview;
 				}
 				if (!options.expanded && hideCollapsedRow(record)) return new Container();
-				if (!options.expanded) {
-					return new ActivityRowComponent(record, theme, () => density);
-				}
+				// Collapsed, the call row already shows this record's outcome (it
+				// reads the same record). A second row here drew every call twice.
+				if (!options.expanded) return new Container();
 				return renderExpandedToolResult(
 					name,
 					context.args as Record<string, unknown>,
@@ -237,15 +238,17 @@ export default function activityMode(pi: ExtensionAPI) {
 				ctx.ui.notify("/activity requires interactive TUI mode.", "error");
 				return;
 			}
-			const currentRecords = runRecords.filter((record) => !history.some((saved) => saved.id === record.id));
-			const records = [...history, ...currentRecords].slice(-HISTORY_LIMIT);
-			if (!records.length) {
-				ctx.ui.notify("No activity has been recorded in this session yet.", "info");
-				return;
-			}
-			await ctx.ui.custom<void>((tui, theme, keybindings, done) => {
-				return new ActivityInspectorComponent(records, theme, keybindings, () => done(), () => tui.requestRender());
-			});
+			await openPanel(ctx, activityPanelSpec({
+				records: () => {
+					const current = runRecords.filter((record) => !history.some((saved) => saved.id === record.id));
+					return [...history, ...current].slice(-HISTORY_LIMIT);
+				},
+				density: () => density,
+				setDensity: (next) => {
+					density = next;
+					pi.appendEntry("activity-settings", { density });
+				},
+			}));
 		},
 	});
 
@@ -355,7 +358,9 @@ export default function activityMode(pi: ExtensionAPI) {
 	});
 
 	pi.on("ui_prompt_start", (_event, ctx) => {
-		waitingForUser = true;
+		// Only a question asked during a run waits on the person. A panel they
+		// opened themselves (/mcp, /agents) is not "waiting for input".
+		waitingForUser = agentRunning;
 		refreshPresence(ctx);
 	});
 
