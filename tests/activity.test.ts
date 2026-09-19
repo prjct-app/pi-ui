@@ -409,8 +409,9 @@ test("rows rebuilt from history keep a still duration and reuse their render", (
 	const tool = h.tools.get("bash");
 	const args = { command: `cat > big.txt <<'EOF'\n${"línea 🚀\n".repeat(4_000)}EOF` };
 	const context = renderContext({ toolCallId: "bash-history", args, isPartial: false });
-	tool.renderCall(args, theme, context);
-	const row = tool.renderResult(result("done"), { expanded: false, isPartial: false }, theme, context);
+	const row = tool.renderCall(args, theme, context);
+	assert.deepEqual(rendered(tool.renderResult(result("done"), { expanded: false, isPartial: false }, theme, context)), [],
+		"collapsed, the call row is the only row: no duplicate");
 	const realNow = Date.now;
 	try {
 		const first = row.render(120);

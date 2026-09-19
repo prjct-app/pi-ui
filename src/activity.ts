@@ -206,9 +206,9 @@ export default function activityMode(pi: ExtensionAPI) {
 					if (preview) record.outputPreview = preview;
 				}
 				if (!options.expanded && hideCollapsedRow(record)) return new Container();
-				if (!options.expanded) {
-					return new ActivityRowComponent(record, theme, () => density);
-				}
+				// Collapsed, the call row already shows this record's outcome (it
+				// reads the same record). A second row here drew every call twice.
+				if (!options.expanded) return new Container();
 				return renderExpandedToolResult(
 					name,
 					context.args as Record<string, unknown>,
