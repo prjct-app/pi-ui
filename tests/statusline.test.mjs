@@ -5,6 +5,7 @@ import { visibleWidth } from '@earendil-works/pi-tui';
 import minimalFooter from '../src/statusline.ts';
 
 function harness(initialSessionName, extensionStatuses = new Map()) {
+  const widgets = new Map();
   const handlers = new Map();
   let sessionName = initialSessionName;
   let footer;
@@ -21,6 +22,7 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
     model: { name: 'Test model', provider: 'test-provider' },
     getContextUsage: () => ({ percent: 25 }),
     ui: {
+      setWidget: (key, factory, options) => { widgets.set(key, { factory, options }); },
       setFooter: (factory) => {
         footer = factory(
           { requestRender() {} },
@@ -45,6 +47,11 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
     },
     lines(width = 160) {
       return footer.render(width).map(line => plain(line));
+    },
+    modes(width = 160) {
+      const { factory, options } = widgets.get('prjct-modes');
+      assert.equal(options.placement, 'aboveEditor');
+      return factory({ requestRender() {} }, { fg: (_color, text) => text }).render(width).map(line => plain(line));
     },
     setSessionName(name) {
       sessionName = name;
@@ -83,18 +90,10 @@ test('minimal footer shows the Fast icon beside the model', () => {
   assert.match(footer.render(), /^sample-project ·  main ·  Test model · high/);
 });
 
-test('active modes share one line right below the editor, and it disappears when none is on', () => {
-  const statuses = new Map([
-    ['mode:plan', '◆ plan 2/5'],
-    ['mode:agents', '◆ agents ● 1'],
-    ['plan-mode', 'old plan status'],
-  ]);
-  const footer = harness(undefined, statuses);
-  assert.deepEqual(footer.lines(), [' ◆ agents ● 1  ·  ◆ plan 2/5', footer.render()]);
-  assert.doesNotMatch(footer.render(), /plan/);
-
-  statuses.clear();
+test('the footer never draws modes; the kit puts them above the editor', () => {
+  const footer = harness(undefined, new Map([['mode:plan', '◆ plan 2/5'], ['mode:agents', '◆ agents ● 1']]));
   assert.equal(footer.lines().length, 1);
+  assert.doesNotMatch(footer.render(), /plan|agents/);
 });
 
 test('minimal footer hides unrelated extension statuses', () => {
