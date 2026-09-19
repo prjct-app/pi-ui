@@ -424,3 +424,12 @@ test("rows rebuilt from history keep a still duration and reuse their render", (
 		Date.now = realNow;
 	}
 });
+
+test("activity commands carry the prjct mark and complete densities", () => {
+	const h = harness();
+	assert.match(h.commands.get("activity").description, /^p · /);
+	const settings = h.commands.get("activity-settings");
+	assert.match(settings.description, /^p · transcript row density/);
+	assert.deepEqual(settings.getArgumentCompletions("").map((item: any) => item.value), ["minimal", "balanced", "forensic"]);
+	assert.equal(settings.getArgumentCompletions("f")[0].description, "p · adds category and truncation");
+});

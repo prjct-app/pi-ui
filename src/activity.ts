@@ -14,7 +14,7 @@ import {
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Container, SettingsList, Text, type SettingItem } from "@earendil-works/pi-tui";
 import type { TSchema } from "typebox";
-import { openPanel } from "@prjct.app/pi-tui-kit";
+import { brand, completer, openPanel } from "@prjct.app/pi-tui-kit";
 import { activityPanelSpec } from "./activity-panel.ts";
 import {
 	ActiveToolsWidget,
@@ -232,7 +232,7 @@ export default function activityMode(pi: ExtensionAPI) {
 	registerCompactTool(createLsTool);
 
 	pi.registerCommand("activity", {
-		description: "Inspect recent tool activity with filters for changes, commands, and issues.",
+		description: brand("every tool call this session: input, output, filters"),
 		handler: async (_args, ctx) => {
 			if (ctx.mode !== "tui") {
 				ctx.ui.notify("/activity requires interactive TUI mode.", "error");
@@ -253,7 +253,12 @@ export default function activityMode(pi: ExtensionAPI) {
 	});
 
 	pi.registerCommand("activity-settings", {
-		description: "Choose minimal, balanced, or forensic activity-row density.",
+		description: brand("transcript row density: minimal | balanced | forensic"),
+		getArgumentCompletions: completer([
+			{ value: "minimal", description: "only errors show metadata" },
+			{ value: "balanced", description: "outcome and duration (default)" },
+			{ value: "forensic", description: "adds category and truncation" },
+		]),
 		handler: async (args, ctx) => {
 			const requested = args.trim().toLowerCase();
 			if (requested) {
