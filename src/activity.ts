@@ -18,7 +18,6 @@ import {
 	ActiveToolsWidget,
 	ActivityInspectorComponent,
 	ActivityRowComponent,
-	ActivitySummaryComponent,
 	renderExpandedToolResult,
 } from "./components.ts";
 import {
@@ -27,10 +26,9 @@ import {
 	aggregateFileChanges,
 	applyToolResult,
 	finishRecord,
-	formatDuration,
+	hideCollapsedRow,
 	resultPreview,
 	snapshotRecord,
-	TOOL_VERBS,
 } from "./format.ts";
 import type {
 	ActivityCategory,
@@ -61,8 +59,6 @@ export default function activityMode(pi: ExtensionAPI) {
 	let runRecords: ActivityRecord[] = [];
 	const recordsById = new Map<string, ActivityRecord>();
 	const activeRecords = new Map<string, ActivityRecord>();
-
-	const completedCount = () => runRecords.filter((record) => record.status !== "running").length;
 
 	function ensureRecord(
 		id: string,
@@ -134,7 +130,7 @@ export default function activityMode(pi: ExtensionAPI) {
 		if (waitingForUser || records.length) {
 			ctx.ui.setWidget(
 				"pi-activity",
-				(_tui, theme) => new ActiveToolsWidget(activeList, completedCount, () => waitingForUser, theme),
+				(_tui, theme) => new ActiveToolsWidget(activeList, () => waitingForUser, theme),
 				{ placement: "aboveEditor" },
 			);
 		} else {
@@ -142,36 +138,27 @@ export default function activityMode(pi: ExtensionAPI) {
 		}
 
 		if (waitingForUser) {
-			setWorkingMessage(ctx, "Waiting for input…");
-			ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("warning", "! waiting for input"));
+			setWorkingMessage(ctx, undefined);
+			ctx.ui.setStatus("pi-activity", undefined);
 			return;
 		}
 		if (records.length) {
-			const first = records[0]!;
-			const verb = TOOL_VERBS[first.name] ?? first.name.toUpperCase();
-			const message = records.length > 1
-				? `${records.length} active · ${verb} ${first.target}`
-				: `${verb} ${first.target}`;
-			setWorkingMessage(ctx, message);
-			ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("accent", `◆ ${records.length} active · ${completedCount()} done`));
+			setWorkingMessage(ctx, undefined);
+			ctx.ui.setStatus("pi-activity", undefined);
 			return;
 		}
 		if (agentRunning) {
-			setWorkingMessage(ctx, "Thinking…");
-			ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("dim", "◆ thinking"));
+			setWorkingMessage(ctx, undefined);
+			ctx.ui.setStatus("pi-activity", undefined);
 		} else {
 			setWorkingMessage(ctx, undefined);
-			ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("dim", `◇ ready · ${density}`));
+			ctx.ui.setStatus("pi-activity", undefined);
 		}
 	}
 
-	pi.registerEntryRenderer("activity-summary", (entry, options, theme) => {
-		return new ActivitySummaryComponent(
-			(entry.data ?? {}) as ActivitySummaryData,
-			options.expanded,
-			theme,
-		);
-	});
+	// Preserve summary data for /activity without adding a redundant transcript
+	// message after every turn. Tool failures still keep their own visible row.
+	pi.registerEntryRenderer("activity-summary", () => new Container());
 
 	// Settings are persisted as invisible session entries and restored on resume/tree navigation.
 	pi.registerEntryRenderer("activity-settings", () => new Container());
@@ -199,6 +186,10 @@ export default function activityMode(pi: ExtensionAPI) {
 				const id = context.toolCallId || `${name}:render`;
 				const record = ensureRecord(id, name, args as Record<string, unknown>);
 				if (context.isError && record.status === "running") record.status = "error";
+				// Pi 0.85.1 wraps every renderer return value in MouseRegion without
+				// checking for undefined. An empty component preserves the hidden row
+				// while remaining safe for MouseRegion.render().
+				if (hideCollapsedRow(record) && !context.expanded) return new Container();
 				const component = context.lastComponent instanceof ActivityRowComponent
 					? context.lastComponent
 					: new ActivityRowComponent(record, theme, () => density);
@@ -212,6 +203,10 @@ export default function activityMode(pi: ExtensionAPI) {
 				else {
 					const preview = resultPreview(result);
 					if (preview) record.outputPreview = preview;
+				}
+				if (!options.expanded && hideCollapsedRow(record)) return new Container();
+				if (!options.expanded) {
+					return new ActivityRowComponent(record, theme, () => density);
 				}
 				return renderExpandedToolResult(
 					name,
@@ -266,7 +261,7 @@ export default function activityMode(pi: ExtensionAPI) {
 				density = requested;
 				pi.appendEntry("activity-settings", { density });
 				if (ctx.mode === "tui") {
-					ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("dim", `Activity · ${density}`));
+					ctx.ui.setStatus("pi-activity", undefined);
 					ctx.ui.notify(`Activity density set to ${density}.`, "info");
 				}
 				return;
@@ -294,7 +289,7 @@ export default function activityMode(pi: ExtensionAPI) {
 						density = value;
 						settings.updateValue(id, value);
 						pi.appendEntry("activity-settings", { density });
-						ctx.ui.setStatus("pi-activity", theme.fg("dim", `Activity · ${density}`));
+						ctx.ui.setStatus("pi-activity", undefined);
 						tui.requestRender();
 					},
 					() => done(),
@@ -324,7 +319,7 @@ export default function activityMode(pi: ExtensionAPI) {
 		reconstructSessionState(ctx);
 		if (ctx.mode !== "tui") return;
 		ctx.ui.setToolsExpanded(false);
-		ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("dim", `◇ ready · ${density}`));
+		ctx.ui.setStatus("pi-activity", undefined);
 	});
 
 	pi.on("session_tree", (_event, ctx) => {
@@ -337,7 +332,7 @@ export default function activityMode(pi: ExtensionAPI) {
 		if (ctx.mode === "tui") {
 			ctx.ui.setWidget("pi-activity", undefined);
 			setWorkingMessage(ctx, undefined);
-			ctx.ui.setStatus("pi-activity", ctx.ui.theme.fg("dim", `◇ ready · ${density}`));
+			ctx.ui.setStatus("pi-activity", undefined);
 		}
 	});
 
@@ -445,11 +440,7 @@ export default function activityMode(pi: ExtensionAPI) {
 			};
 			pi.appendEntry("activity-summary", data);
 			history = [...history, ...runRecords].slice(-HISTORY_LIMIT);
-			const issueCount = data.errorCount + data.cancelledCount;
-			const status = issueCount
-				? ctx.ui.theme.fg("warning", `! ${data.actionCount} actions · ${issueCount} issues · ${formatDuration(data.durationMs)}`)
-				: ctx.ui.theme.fg("success", `✓ ${data.actionCount} actions · ${data.modifiedFiles.length} files · ${formatDuration(data.durationMs)}`);
-			ctx.ui.setStatus("pi-activity", status);
+			ctx.ui.setStatus("pi-activity", undefined);
 		}
 
 		runRecords = [];

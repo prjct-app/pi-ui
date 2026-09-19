@@ -1,3 +1,4 @@
+import { basename } from "node:path";
 import { homedir } from "node:os";
 import { stripVTControlCharacters } from "node:util";
 import type {
@@ -20,7 +21,45 @@ export const TOOL_VERBS: Record<string, string> = {
 	find: "FIND",
 	grep: "SEARCH",
 	ls: "LIST",
+	memory_context: "MEM",
+	memory_record: "MEM",
 };
+
+export function isTraceTool(name: string): boolean {
+	return name.startsWith("memory_");
+}
+
+export function hideCollapsedRow(record: Pick<ActivityRecord, "name" | "category" | "status">): boolean {
+	if (record.status === "error" || record.status === "cancelled") return false;
+	return record.category === "inspect" || isTraceTool(record.name);
+}
+
+export function groupedActionLabels(records: readonly Pick<ActivityRecordSnapshot, "name" | "status">[]): string[] {
+	const counts = new Map<string, number>();
+	for (const record of records) {
+		if (record.status === "error" || record.status === "cancelled") continue;
+		const verb = TOOL_VERBS[record.name] ?? record.name;
+		counts.set(verb, (counts.get(verb) ?? 0) + 1);
+	}
+	return [...counts.entries()].map(([verb, count]) => count === 1 ? verb : `${verb} ${count}`);
+}
+
+export function groupedActiveLines(records: readonly ActivityRecord[]): { header: string; samples: string } {
+	const counts = new Map<string, { count: number; samples: string[] }>();
+	for (const record of records) {
+		const verb = TOOL_VERBS[record.name] ?? record.name;
+		const entry = counts.get(verb) ?? { count: 0, samples: [] };
+		entry.count += 1;
+		const sample = basename(record.target.split(" · ")[0] ?? record.target);
+		if (sample && entry.samples.length < 4) entry.samples.push(sample);
+		counts.set(verb, entry);
+	}
+	const header = [...counts.entries()].map(([verb, entry]) => entry.count === 1 ? verb : `${verb} ${entry.count}`).join(" · ");
+	const samples = [...counts.values()].flatMap((entry) => entry.samples);
+	const extra = records.length - samples.length;
+	const sampleLine = extra > 0 ? `${samples.join(", ")}, +${extra}` : samples.join(", ");
+	return { header, samples: sampleLine };
+}
 
 export function cleanDisplayText(value: string): string {
 	return stripVTControlCharacters(value)
@@ -34,11 +73,16 @@ export function actionTarget(name: string, args: Record<string, unknown>): strin
 		? args.command
 		: name === "grep" || name === "find"
 			? `${args.pattern ?? ""}${args.path ? ` · ${args.path}` : ""}`
-			: args.path;
+			: isTraceTool(name)
+				? args.action ?? args.statement ?? args.path
+				: args.path;
 	if (typeof raw !== "string" || !raw) return ".";
 	const home = homedir();
 	const target = raw.startsWith(`${home}/`) ? `~/${raw.slice(home.length + 1)}` : raw;
-	return cleanDisplayText(target);
+	// Rows show the target on one line and re-render every frame; measuring a
+	// full heredoc command (up to 28KB) per row made long sessions crawl.
+	const clean = cleanDisplayText(target.length > TARGET_SOURCE_CHARS ? target.slice(0, TARGET_SOURCE_CHARS) : target);
+	return clean.length > SNAPSHOT_TARGET_CHARS ? `${clean.slice(0, SNAPSHOT_TARGET_CHARS - 1)}…` : clean;
 }
 
 export function isVerificationCommand(command: unknown): boolean {
@@ -46,7 +90,7 @@ export function isVerificationCommand(command: unknown): boolean {
 }
 
 export function activityCategory(name: string, args: Record<string, unknown>): ActivityCategory {
-	if (INSPECTION_TOOLS.has(name)) return "inspect";
+	if (INSPECTION_TOOLS.has(name) || isTraceTool(name)) return "inspect";
 	if (CHANGE_TOOLS.has(name)) return "change";
 	if (name === "bash") return isVerificationCommand(args.command) ? "verify" : "execute";
 	return "other";
@@ -57,6 +101,8 @@ export const PREVIEW_LINES = 5;
 const PREVIEW_CHARS = 2_000;
 /** Persisted history renders a target on one line; full heredoc commands reached 28KB each. */
 const SNAPSHOT_TARGET_CHARS = 240;
+/** Raw input kept before cleaning, so escape sequences cannot eat the visible budget. */
+const TARGET_SOURCE_CHARS = SNAPSHOT_TARGET_CHARS * 8;
 
 /** First visible lines of a text, capped the way the old 2,000-character preview was. */
 export function previewText(text: string): string {
