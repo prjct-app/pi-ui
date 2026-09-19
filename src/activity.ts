@@ -355,7 +355,9 @@ export default function activityMode(pi: ExtensionAPI) {
 	});
 
 	pi.on("ui_prompt_start", (_event, ctx) => {
-		waitingForUser = true;
+		// Only a question asked during a run waits on the person. A panel they
+		// opened themselves (/mcp, /agents) is not "waiting for input".
+		waitingForUser = agentRunning;
 		refreshPresence(ctx);
 	});
 

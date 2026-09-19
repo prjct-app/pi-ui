@@ -252,6 +252,7 @@ test("live widget, status, working message, and waiting state track parallel act
 	assert.equal(h.widgets.at(-1)?.content, undefined);
 
 	h.emit("ui_prompt_start", { reason: "ui_prompt", kind: "custom" });
+	assert.equal(h.widgets.at(-1)?.content, undefined, "a panel the person opened while idle is not waiting for input");
 	h.emit("ui_prompt_end", { reason: "ui_prompt", kind: "custom" });
 	assert.equal(h.statuses.at(-1)?.text, undefined);
 });
