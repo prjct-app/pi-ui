@@ -2,7 +2,6 @@ import { basename } from "node:path";
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
-import { modeLine, readModes } from "@prjct.app/pi-tui-kit";
 
 const BAR_WIDTH = 8;
 const USED_SEGMENT = "⠿";
@@ -20,6 +19,8 @@ function contextUsedBar(percentUsed: number | null | undefined): string {
 export default function minimalFooter(pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") return;
+		// Modes (plan, fast, agents) are drawn by the shared kit, right above the
+		// editor; the footer below the editor carries only where and what.
 		ctx.ui.setFooter((tui, theme, footerData) => {
 			const unsubscribeBranchChange = footerData.onBranchChange(() => tui.requestRender());
 
@@ -31,9 +32,6 @@ export default function minimalFooter(pi: ExtensionAPI) {
 					const sessionName = pi.getSessionName();
 					const branch = footerData.getGitBranch();
 					const statuses = footerData.getExtensionStatuses();
-					// Extensions publish modes through setMode; p-ui draws them all on
-					// one line right below the editor.
-					const modes = readModes(statuses);
 					const fastStatus = statuses.has("mode:fast") ? undefined : statuses.get("pi-fast-mode");
 					const modelName = ctx.model?.name ?? ctx.model?.id ?? "no model";
 					const model = fastStatus && visibleWidth(fastStatus) > 0 ? `${fastStatus} ${modelName}` : modelName;
@@ -53,11 +51,7 @@ export default function minimalFooter(pi: ExtensionAPI) {
 					const visibleLeft = truncateToWidth(left, availableLeft, "");
 					const gap = " ".repeat(Math.max(1, width - visibleWidth(visibleLeft) - visibleWidth(bar)));
 
-					const modesText = modeLine(theme, modes);
-					return [
-						...(modesText ? [truncateToWidth(modesText, width, "")] : []),
-						truncateToWidth(`${visibleLeft}${gap}${bar}`, width, ""),
-					];
+					return [truncateToWidth(`${visibleLeft}${gap}${bar}`, width, "")];
 				},
 			};
 		});
