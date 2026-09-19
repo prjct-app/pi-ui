@@ -3,18 +3,14 @@ import {
 	highlightCode,
 	keyHint,
 	renderDiff,
-	type KeybindingsManager,
 	type Theme,
 } from "@earendil-works/pi-coding-agent";
 import {
 	Container,
 	Image,
-	Key,
-	matchesKey,
 	Text,
 	truncateToWidth,
 	visibleWidth,
-	wrapTextWithAnsi,
 	type Component,
 } from "@earendil-works/pi-tui";
 import {
@@ -23,7 +19,6 @@ import {
 	formatDuration,
 	groupedActionLabels,
 	groupedActiveLines,
-	PREVIEW_LINES,
 	resultText,
 	TOOL_VERBS,
 } from "./format.ts";
@@ -266,130 +261,6 @@ export class ActivitySummaryComponent implements Component {
 		const title = `${this.theme.fg(failures.length ? "error" : "muted", "Activity")} ${this.theme.fg("muted", `· ${actions} · ${count(files.length, "file")} · ${errors}`)}`;
 		if (!this.expanded) return [safeLine(title, width)];
 		return [safeLine(title, width), ...files.map((path) => safeLine(`  • ${path}`, width))];
-	}
-
-	invalidate(): void {}
-}
-
-type InspectorFilter = "all" | "changed" | "commands" | "issues";
-type InspectableRecord = ActivityRecord | ActivityRecordSnapshot;
-
-function isChanged(record: InspectableRecord): boolean {
-	return record.category === "change";
-}
-
-function isIssue(record: InspectableRecord): boolean {
-	return record.status === "error" || record.status === "cancelled";
-}
-
-export class ActivityInspectorComponent implements Component {
-	private filter: InspectorFilter = "all";
-	private selected = 0;
-	private showDetail = false;
-	private readonly filters: InspectorFilter[] = ["all", "changed", "commands", "issues"];
-
-	constructor(
-		private readonly records: InspectableRecord[],
-		private readonly theme: Theme,
-		private readonly keybindings: KeybindingsManager,
-		private readonly onClose: () => void,
-		private readonly onRender: () => void,
-	) {}
-
-	private filtered(): InspectableRecord[] {
-		const newestFirst = [...this.records].reverse();
-		switch (this.filter) {
-			case "changed": return newestFirst.filter(isChanged);
-			case "commands": return newestFirst.filter((record) => record.name === "bash");
-			case "issues": return newestFirst.filter(isIssue);
-			default: return newestFirst;
-		}
-	}
-
-	private countFor(filter: InspectorFilter): number {
-		switch (filter) {
-			case "changed": return this.records.filter(isChanged).length;
-			case "commands": return this.records.filter((record) => record.name === "bash").length;
-			case "issues": return this.records.filter(isIssue).length;
-			default: return this.records.length;
-		}
-	}
-
-	private changeFilter(direction: number): void {
-		const index = this.filters.indexOf(this.filter);
-		this.filter = this.filters[(index + direction + this.filters.length) % this.filters.length]!;
-		this.selected = 0;
-		this.showDetail = false;
-	}
-
-	handleInput(data: string): void {
-		const items = this.filtered();
-		if (this.keybindings.matches(data, "tui.select.cancel")) {
-			this.onClose();
-			return;
-		}
-		if (matchesKey(data, Key.left) || matchesKey(data, Key.shift("tab"))) this.changeFilter(-1);
-		else if (matchesKey(data, Key.right) || matchesKey(data, Key.tab)) this.changeFilter(1);
-		else if (this.keybindings.matches(data, "tui.select.up")) this.selected = Math.max(0, this.selected - 1);
-		else if (this.keybindings.matches(data, "tui.select.down")) this.selected = Math.min(Math.max(0, items.length - 1), this.selected + 1);
-		else if (this.keybindings.matches(data, "tui.select.confirm") && items.length) this.showDetail = !this.showDetail;
-		else if (["1", "2", "3", "4"].includes(data)) {
-			this.filter = this.filters[Number(data) - 1]!;
-			this.selected = 0;
-			this.showDetail = false;
-		}
-		this.onRender();
-	}
-
-	render(width: number): string[] {
-		const lines: string[] = [safeLine(this.theme.fg("accent", this.theme.bold("Activity inspector")), width)];
-		const tabs = this.filters.map((filter, index) => {
-			const label = `${index + 1} ${filter[0]!.toUpperCase()}${filter.slice(1)} ${this.countFor(filter)}`;
-			return filter === this.filter ? this.theme.fg("accent", this.theme.bold(`[${label}]`)) : this.theme.fg("dim", label);
-		}).join("  ");
-		lines.push(safeLine(tabs, width), "");
-
-		const items = this.filtered();
-		if (!items.length) {
-			lines.push(safeLine(this.theme.fg("dim", "  No activity in this filter."), width));
-		} else {
-			const start = Math.max(0, Math.min(this.selected - 5, Math.max(0, items.length - 10)));
-			for (let index = start; index < Math.min(items.length, start + 10); index++) {
-				const record = items[index]!;
-				const selected = index === this.selected;
-				const presentation = STATUS_PRESENTATION[record.status];
-				const cursor = selected ? this.theme.fg("accent", "›") : " ";
-				const verb = (TOOL_VERBS[record.name] ?? record.name.toUpperCase()).padEnd(8);
-				const left = `${cursor} ${this.theme.fg(presentation.color, presentation.symbol)} ${this.theme.fg("toolTitle", verb)}${this.theme.fg("toolOutput", record.target)}`;
-				const right = this.theme.fg("dim", [record.outcome, formatDuration(recordDuration(record))].filter(Boolean).join(" · "));
-				lines.push(joinColumns(left, right, width, 24));
-			}
-			if (items.length > 10) lines.push(safeLine(this.theme.fg("dim", `  ${this.selected + 1}/${items.length}`), width));
-
-			const selectedRecord = items[this.selected];
-			if (this.showDetail && selectedRecord) lines.push(...this.renderDetail(selectedRecord, width));
-		}
-
-		const keys = (id: "tui.select.up" | "tui.select.confirm" | "tui.select.cancel") => this.keybindings.getKeys(id).join("/");
-		const help = `${keys("tui.select.up")} navigate · left/right filter · ${keys("tui.select.confirm")} inspect · ${keys("tui.select.cancel")} close`;
-		lines.push("", safeLine(this.theme.fg("dim", help), width));
-		return lines;
-	}
-
-	private renderDetail(record: InspectableRecord, width: number): string[] {
-		const lines = ["", safeLine(this.theme.fg("borderMuted", "─".repeat(Math.max(1, width))), width)];
-		lines.push(joinColumns(`  ${this.theme.fg("accent", "Target")} ${this.theme.fg("text", record.target)}`, this.theme.fg("dim", record.category), width, 20));
-		lines.push(safeLine(`  ${this.theme.fg("accent", "Status")} ${record.status}${record.outcome ? ` · ${record.outcome}` : ""} · ${formatDuration(recordDuration(record))}`, width));
-		if (record.change) lines.push(safeLine(`  ${this.theme.fg("accent", "Change")} ${cleanDisplayText(record.change.path)} · ${changeStats(record.change)}`, width));
-		if (record.truncated) lines.push(safeLine(`  ${this.theme.fg("warning", "Output was truncated")}`, width));
-		if (record.errorMessage) lines.push(...wrapTextWithAnsi(`  ${this.theme.fg("error", record.errorMessage)}`, Math.max(1, width)));
-		if ("outputPreview" in record && record.outputPreview && !record.errorMessage) {
-			lines.push(safeLine(`  ${this.theme.fg("accent", "Result")}`, width));
-			for (const outputLine of record.outputPreview.split("\n").slice(0, PREVIEW_LINES)) {
-				lines.push(safeLine(`    ${this.theme.fg("dim", cleanDisplayText(outputLine))}`, width));
-			}
-		}
-		return lines;
 	}
 
 	invalidate(): void {}

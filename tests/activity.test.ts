@@ -309,20 +309,28 @@ test("activity inspector and density settings are interactive and session-persis
 
 	await h.commands.get("activity").handler("", h.ctx);
 	const inspector = h.customComponents.at(-1);
-	assert.ok(rendered(inspector).some((line) => line.includes("Activity inspector")));
-	inspector.handleInput("3");
-	assert.ok(rendered(inspector).some((line) => line.includes("No activity in this filter")));
-	inspector.handleInput("2");
-	inspector.handleInput("\r");
-	const inspected = rendered(inspector);
-	assert.ok(inspected.some((line) => line.includes("Change") && line.includes("src/a.ts")));
-	assert.ok(inspected.some((line) => line.includes("written")));
+	const screen = () => inspector.render(120).map((line: string) => stripVTControlCharacters(line)).join("\n");
+	assert.match(screen(), /Activity {2}1 action · 1 changed · 0 issues · all/);
+	assert.match(screen(), /› ✓ WRITE {2}src\/a\.ts/);
+	assert.match(screen(), /changed\s+src\/a\.ts · 2 lines/);
+	inspector.handleInput("\t");
+	for (let step = 0; step < 8; step += 1) inspector.handleInput("\x1b[B");
+	assert.match(screen(), /path: src\/a\.ts/, "scrolling the detail reaches the full input");
+	assert.match(screen(), /Output[\s\S]*written/, "and the output preview");
+	inspector.handleInput("\x1b");
+	for (let step = 0; step < 3; step += 1) { inspector.handleInput("f"); await new Promise((resolve) => setImmediate(resolve)); }
+	assert.match(screen(), /0 issues · issues/);
+	assert.match(screen(), /No tool activity/);
+	inspector.handleInput("v");
+	await new Promise((resolve) => setImmediate(resolve));
+	assert.equal(h.entries.at(-1)?.data.density, "forensic", "v changes the transcript rows from the panel");
 
 	await h.commands.get("activity-settings").handler("", h.ctx);
 	const settings = h.customComponents.at(-1);
 	settings.handleInput("\r");
-	const saved = h.entries.find((entry) => entry.customType === "activity-settings");
-	assert.equal(saved?.data.density, "forensic");
+	const saved = h.entries.filter((entry) => entry.customType === "activity-settings").at(-1);
+	assert.equal(saved?.data.density, "minimal");
+	await h.commands.get("activity-settings").handler("forensic", h.ctx);
 
 	const resumed = harness([...h.entries]);
 	resumed.emit("session_start", { reason: "resume" });

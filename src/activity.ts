@@ -14,9 +14,10 @@ import {
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Container, SettingsList, Text, type SettingItem } from "@earendil-works/pi-tui";
 import type { TSchema } from "typebox";
+import { openPanel } from "@prjct.app/pi-tui-kit";
+import { activityPanelSpec } from "./activity-panel.ts";
 import {
 	ActiveToolsWidget,
-	ActivityInspectorComponent,
 	ActivityRowComponent,
 	renderExpandedToolResult,
 } from "./components.ts";
@@ -237,15 +238,17 @@ export default function activityMode(pi: ExtensionAPI) {
 				ctx.ui.notify("/activity requires interactive TUI mode.", "error");
 				return;
 			}
-			const currentRecords = runRecords.filter((record) => !history.some((saved) => saved.id === record.id));
-			const records = [...history, ...currentRecords].slice(-HISTORY_LIMIT);
-			if (!records.length) {
-				ctx.ui.notify("No activity has been recorded in this session yet.", "info");
-				return;
-			}
-			await ctx.ui.custom<void>((tui, theme, keybindings, done) => {
-				return new ActivityInspectorComponent(records, theme, keybindings, () => done(), () => tui.requestRender());
-			});
+			await openPanel(ctx, activityPanelSpec({
+				records: () => {
+					const current = runRecords.filter((record) => !history.some((saved) => saved.id === record.id));
+					return [...history, ...current].slice(-HISTORY_LIMIT);
+				},
+				density: () => density,
+				setDensity: (next) => {
+					density = next;
+					pi.appendEntry("activity-settings", { density });
+				},
+			}));
 		},
 	});
 
