@@ -13,6 +13,7 @@ import {
 	visibleWidth,
 	type Component,
 } from "@earendil-works/pi-tui";
+import { stamp } from "@prjct.app/pi-tui-kit";
 import {
 	cleanDisplayText,
 	formatBytes,
@@ -22,6 +23,7 @@ import {
 	resultText,
 	TOOL_VERBS,
 } from "./format.ts";
+import { callTime } from "./transcript.ts";
 import type {
 	ActivityDensity,
 	ActivityRecord,
@@ -124,7 +126,8 @@ export class ActivityRowComponent implements Component {
 		const verbText = (TOOL_VERBS[this.record.name] ?? this.record.name.toUpperCase()).slice(0, 8).padEnd(8);
 		const verb = this.theme.fg("toolTitle", this.theme.bold(verbText));
 		const target = this.theme.fg("toolOutput", this.record.target);
-		const left = `${symbol} ${verb}${target}`;
+		const when = `${stamp(this.theme, "p", callTime(this.record.id) ?? this.record.startedAt)} ${this.theme.fg("dim", "/")} `;
+		const left = `${symbol} ${when}${verb}${target}`;
 		const metadata = metadataFor(this.record, this.density());
 		const rightColor = this.record.status === "error"
 			? "error"

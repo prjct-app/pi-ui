@@ -216,12 +216,12 @@ test("tool-specific outcomes include search counts, write size, edit deltas, err
 	h.emit("tool_execution_start", { toolCallId: "failed", toolName: "bash", args: failedArgs });
 	h.emit("tool_result", { toolCallId: "failed", toolName: "bash", input: failedArgs, content: failed.content, details: undefined, isError: true });
 	h.emit("tool_execution_end", { toolCallId: "failed", toolName: "bash", result: failed, isError: true });
-	assert.match(rendered(h.tools.get("bash").renderCall(failedArgs, theme, renderContext({ toolCallId: "failed", args: failedArgs, isPartial: false, isError: true })))[0] ?? "", /✕ RUN.*exit 2/);
+	assert.match(rendered(h.tools.get("bash").renderCall(failedArgs, theme, renderContext({ toolCallId: "failed", args: failedArgs, isPartial: false, isError: true })))[0] ?? "", /✕ p\. \d\d:\d\d \/ RUN.*exit 2/);
 
 	const cancelled = result("Command aborted");
 	h.emit("tool_execution_start", { toolCallId: "cancelled", toolName: "bash", args: { command: "sleep 5" } });
 	h.emit("tool_execution_end", { toolCallId: "cancelled", toolName: "bash", result: cancelled, isError: true });
-	assert.match(rendered(h.tools.get("bash").renderCall({ command: "sleep 5" }, theme, renderContext({ toolCallId: "cancelled", args: { command: "sleep 5" }, isPartial: false, isError: true })))[0] ?? "", /◇ RUN.*cancelled/);
+	assert.match(rendered(h.tools.get("bash").renderCall({ command: "sleep 5" }, theme, renderContext({ toolCallId: "cancelled", args: { command: "sleep 5" }, isPartial: false, isError: true })))[0] ?? "", /◇ p\. \d\d:\d\d \/ RUN.*cancelled/);
 });
 
 test("live widget, status, working message, and waiting state track parallel activity", () => {
