@@ -8,8 +8,8 @@ import { DefaultResourceLoader } from '@earendil-works/pi-coding-agent';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 
-test('Pi discovers p-ui as exactly one extension', async () => {
-  const agentDir = await realpath(await mkdtemp(join(tmpdir(), 'p-ui-discovery-')));
+test('Pi discovers pi-ui as exactly one extension', async () => {
+  const agentDir = await realpath(await mkdtemp(join(tmpdir(), 'pi-ui-discovery-')));
   try {
     await writeFile(join(agentDir, 'settings.json'), JSON.stringify({ packages: [root] }));
     const loader = new DefaultResourceLoader({ cwd: agentDir, agentDir, noContextFiles: true });

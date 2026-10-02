@@ -2,12 +2,12 @@
 
 ## Identity
 
-- npm name: `@prjct.app/p-ui`.
+- npm name: `@prjct.app/pi-ui`.
 - Initial version: `0.1.0`.
-- Source repository: [prjct-app/p-ui](https://github.com/prjct-app/p-ui).
+- Source repository: [prjct-app/pi-ui](https://github.com/prjct-app/pi-ui).
 - Tested host: Pi `0.85.1`; Node.js `22.19+`.
 
-p-ui consolidates the published behavior of `@prjct.app/pi-activity`, `@prjct.app/pi-header`, and `@prjct.app/pi-statusline`. Existing activity command names, persisted entry types, status keys, and tool overrides remain unchanged for session compatibility.
+pi-ui consolidates the published behavior of `@prjct.app/pi-activity`, `@prjct.app/pi-header`, and `@prjct.app/pi-statusline`. Existing activity command names, persisted entry types, status keys, and tool overrides remain unchanged for session compatibility.
 
 ## One-extension manifest
 
@@ -15,7 +15,7 @@ The package declares exactly one Pi extension:
 
 ```json
 {
-  "name": "@prjct.app/p-ui",
+  "name": "@prjct.app/pi-ui",
   "keywords": ["pi-package"],
   "pi": {
     "extensions": ["./index.ts"],

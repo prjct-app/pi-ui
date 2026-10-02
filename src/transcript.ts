@@ -11,7 +11,7 @@ import { stamp } from "@prjct.app/pi-tui-kit";
  * lines pass through untouched.
  */
 
-const PATCHED = Symbol.for("p-ui.transcript");
+const PATCHED = Symbol.for("pi-ui.transcript");
 const SHELL_MARK = /\x1b\]133;[A-Z]\x07/g;
 const SGR = /\x1b\[[0-9;]*m/g;
 
