@@ -1,4 +1,6 @@
-# p-ui
+# pi-ui
+
+[![pi-ui — for PI Agent](https://raw.githubusercontent.com/prjct-app/pi-ui/main/docs/cover.png)](https://pi.dev)
 
 A single Pi extension that combines the interfaces previously distributed as Pi Activity, Pi Header, and Pi Statusline.
 
@@ -15,16 +17,16 @@ A single Pi extension that combines the interfaces previously distributed as Pi 
 ## Install
 
 ```bash
-pi install npm:@prjct.app/p-ui
+pi install npm:@prjct.app/pi-ui
 ```
 
 For a project-only installation:
 
 ```bash
-pi install -l npm:@prjct.app/p-ui
+pi install -l npm:@prjct.app/pi-ui
 ```
 
-Remove `@prjct.app/pi-activity`, `@prjct.app/pi-header`, and `@prjct.app/pi-statusline` when migrating. Loading them alongside p-ui would register duplicate UI behavior and tool overrides.
+Remove `@prjct.app/pi-activity`, `@prjct.app/pi-header`, and `@prjct.app/pi-statusline` when migrating. Loading them alongside pi-ui would register duplicate UI behavior and tool overrides.
 
 Select `prjct-theme` from `/settings`, or set it directly in `settings.json`:
 
