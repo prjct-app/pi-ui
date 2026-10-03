@@ -1,12 +1,21 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { VERSION } from "@earendil-works/pi-coding-agent";
-import { Container, Image, Text } from "@earendil-works/pi-tui";
+import { Container, Image, Text, type Component } from "@earendil-works/pi-tui";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const extensionDir = dirname(fileURLToPath(import.meta.url));
 const officialLogo = readFileSync(join(extensionDir, "..", "assets", "pi-logo.png")).toString("base64");
+
+/**
+ * Text painted when it is drawn. A Text built once with theme.fg kept the
+ * palette that was active at startup after the person switched palettes.
+ */
+const painted = (paint: () => string): Component => ({
+  render: (width) => new Text(paint(), 0, 0).render(width),
+  invalidate() {},
+});
 
 export default function (pi: ExtensionAPI) {
   pi.on("session_start", (_event, ctx) => {
@@ -18,7 +27,7 @@ export default function (pi: ExtensionAPI) {
         maxWidthCells: 16,
         maxHeightCells: 8,
       }));
-      header.addChild(new Text(theme.fg("muted", `Pi coding agent v${VERSION}`), 0, 0));
+      header.addChild(painted(() => theme.fg("muted", `Pi coding agent v${VERSION}`)));
       return header;
     });
   });

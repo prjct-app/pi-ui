@@ -36,3 +36,14 @@ test('non-TUI modes do not install a header', () => {
   assert.equal(load('json'), undefined);
   assert.equal(load('print'), undefined);
 });
+
+test('the header follows a palette change', () => {
+  const factory = load('tui');
+  // A live theme, like Pi's: the same object answers with the palette in use.
+  let muted = '\x1b[38;2;176;167;156m';
+  const component = factory({ requestRender() {} }, { fg: (_color, text) => `${muted}${text}\x1b[39m` });
+  const versionLine = () => component.render(80).find((line) => line.includes('Pi coding agent v'));
+  assert.ok(versionLine().includes('\x1b[38;2;176;167;156m'));
+  muted = '\x1b[38;2;184;193;209m';
+  assert.ok(versionLine().includes('\x1b[38;2;184;193;209m'), 'repainted in the new palette');
+});
