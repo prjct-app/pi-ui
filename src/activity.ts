@@ -1,17 +1,17 @@
 import {
-	createBashTool,
-	createEditTool,
-	createFindTool,
-	createGrepTool,
-	createLsTool,
-	createReadTool,
-	createWriteTool,
+	createBashToolDefinition,
+	createEditToolDefinition,
+	createFindToolDefinition,
+	createGrepToolDefinition,
+	createLsToolDefinition,
+	createReadToolDefinition,
+	createWriteToolDefinition,
 	getSettingsListTheme,
 	keyHint,
 	type ExtensionAPI,
 	type ExtensionContext,
+	type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { Container, SettingsList, Text, type SettingItem } from "@earendil-works/pi-tui";
 import type { TSchema } from "typebox";
 import { brand, completer, openPanel } from "@prjct.app/pi-tui-kit";
@@ -164,24 +164,22 @@ export default function activityMode(pi: ExtensionAPI) {
 	// Settings are persisted as invisible session entries and restored on resume/tree navigation.
 	pi.registerEntryRenderer("activity-settings", () => new Container());
 
-	function registerCompactTool<T extends TSchema, D>(createTool: (cwd: string) => AgentTool<T, D>) {
-		const initialTool = createTool(process.cwd());
-		const name = initialTool.name;
+	/**
+	 * A built-in tool again, drawn as a compact activity row. Built from the
+	 * tool's definition, not its AgentTool: the AgentTool drops the prompt
+	 * snippet and guidelines, and from 2026-09-20 to 10-03 the system prompt lost
+	 * read/edit/write/grep/find/ls and rules such as "Use read to examine files
+	 * instead of cat or sed" and how to make an edit.
+	 */
+	function registerCompactTool<T extends TSchema, D>(createDefinition: (cwd: string) => ToolDefinition<T, D>) {
+		const initial = createDefinition(process.cwd());
+		const name = initial.name;
 		pi.registerTool({
-			...initialTool,
+			...initial,
 			name,
 			renderShell: "self",
 			async execute(toolCallId, params, signal, onUpdate, ctx) {
-				// Pi supplies ExtensionContext as a fifth argument at runtime, although
-				// AgentTool's public execute type currently exposes only the first four.
-				const executeWithContext = createTool(ctx.cwd).execute as (
-					id: string,
-					input: Parameters<AgentTool<T, D>["execute"]>[1],
-					abortSignal: Parameters<AgentTool<T, D>["execute"]>[2],
-					update: Parameters<AgentTool<T, D>["execute"]>[3],
-					context: ExtensionContext,
-				) => ReturnType<AgentTool<T, D>["execute"]>;
-				return executeWithContext(toolCallId, params, signal, onUpdate, ctx);
+				return createDefinition(ctx.cwd).execute(toolCallId, params, signal, onUpdate, ctx);
 			},
 			renderCall(args, theme, context) {
 				const id = context.toolCallId || `${name}:render`;
@@ -223,13 +221,13 @@ export default function activityMode(pi: ExtensionAPI) {
 		});
 	}
 
-	registerCompactTool(createReadTool);
-	registerCompactTool(createBashTool);
-	registerCompactTool(createEditTool);
-	registerCompactTool(createWriteTool);
-	registerCompactTool(createFindTool);
-	registerCompactTool(createGrepTool);
-	registerCompactTool(createLsTool);
+	registerCompactTool(createReadToolDefinition);
+	registerCompactTool(createBashToolDefinition);
+	registerCompactTool(createEditToolDefinition);
+	registerCompactTool(createWriteToolDefinition);
+	registerCompactTool(createFindToolDefinition);
+	registerCompactTool(createGrepToolDefinition);
+	registerCompactTool(createLsToolDefinition);
 
 	pi.registerCommand("activity", {
 		description: brand("every tool call this session: input, output, filters"),

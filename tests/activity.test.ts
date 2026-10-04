@@ -433,3 +433,18 @@ test("activity commands carry the prjct mark and complete densities", () => {
 	assert.deepEqual(settings.getArgumentCompletions("").map((item: any) => item.value), ["minimal", "balanced", "forensic"]);
 	assert.equal(settings.getArgumentCompletions("f")[0].description, "p · adds category and truncation");
 });
+
+test("the re-registered built-in tools keep their prompt snippet and guidelines", () => {
+	// From 2026-09-20 to 10-03 they were built from AgentTools, which drop both:
+	// the system prompt lost read/edit/write/grep/find/ls and Pi's rules for them.
+	const { tools } = harness();
+	for (const name of ["read", "bash", "edit", "write", "find", "grep", "ls"]) {
+		const tool = tools.get(name);
+		assert.ok(tool, `${name} is registered`);
+		assert.equal(typeof tool.promptSnippet, "string", `${name} keeps its prompt snippet`);
+		assert.ok(tool.promptSnippet.length > 0);
+	}
+	assert.ok(tools.get("read").promptGuidelines.some((rule: string) => /instead of cat or sed/.test(rule)));
+	assert.ok(tools.get("edit").promptGuidelines.length >= 3);
+	assert.equal(tools.get("edit").renderShell, "self", "still drawn as a compact row");
+});

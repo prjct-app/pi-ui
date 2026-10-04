@@ -1,6 +1,6 @@
 {
   "name": "@prjct.app/pi-ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A unified Pi interface with compact activity, a branded startup header, and a focused status line.",
   "type": "module",
   "keywords": [
