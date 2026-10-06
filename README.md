@@ -70,3 +70,5 @@ See [docs/package.md](docs/package.md) for package structure and API details.
 ## License
 
 MIT. The Pi logo provenance is documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+The header is provided by the independent `@prjct.app/pi-header` dependency. Use `/header prjct` for the official prjct logo, `/header logo` to paste an image or SVG, or `/header pi` to restore the Pi default.

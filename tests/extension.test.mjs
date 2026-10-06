@@ -9,6 +9,7 @@ test('the single entry point composes all four UI capabilities', () => {
   const commands = new Map();
   const renderers = new Map();
   const pi = {
+    events: {},
     getSessionName: () => undefined,
     getThinkingLevel: () => 'off',
     registerTool: (tool) => tools.set(tool.name, tool),
@@ -21,6 +22,6 @@ test('the single entry point composes all four UI capabilities', () => {
 
   assert.equal(handlers.get('session_start')?.length, 4);
   assert.deepEqual([...tools.keys()].sort(), ['bash', 'edit', 'find', 'grep', 'ls', 'read', 'write']);
-  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings']);
+  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings', 'header']);
   assert.deepEqual([...renderers.keys()].sort(), ['activity-settings', 'activity-summary']);
 });
