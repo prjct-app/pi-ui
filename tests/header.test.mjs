@@ -3,23 +3,28 @@ import { test } from 'node:test';
 import { stripVTControlCharacters } from 'node:util';
 import { visibleWidth } from '@earendil-works/pi-tui';
 import startupLogo from '../src/header.ts';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
-function load(mode = 'tui') {
+async function load(mode = 'tui') {
   const handlers = new Map();
   let headerFactory;
-  startupLogo({ on: (name, handler) => handlers.set(name, handler) });
+  const base = mkdtempSync(join(tmpdir(), 'pi-ui-header-'));
+  startupLogo({ events: {}, registerCommand() {}, on: (name, handler) => handlers.set(name, handler) }, { settingsPath: join(base, 'header.json') });
   const ctx = {
     mode,
     ui: {
       setHeader: (factory) => { headerFactory = factory; },
     },
   };
-  handlers.get('session_start')({}, ctx);
+  await handlers.get('session_start')({}, ctx);
+  rmSync(base, { recursive: true, force: true });
   return headerFactory;
 }
 
-test('TUI startup installs a documented custom header component', () => {
-  const factory = load('tui');
+test('TUI startup installs a documented custom header component', async () => {
+  const factory = await load('tui');
   assert.equal(typeof factory, 'function');
   const component = factory(
     { requestRender() {} },
@@ -31,14 +36,14 @@ test('TUI startup installs a documented custom header component', () => {
   assert.match(lines.map(stripVTControlCharacters).join('\n'), /Pi coding agent v/);
 });
 
-test('non-TUI modes do not install a header', () => {
-  assert.equal(load('rpc'), undefined);
-  assert.equal(load('json'), undefined);
-  assert.equal(load('print'), undefined);
+test('non-TUI modes do not install a header', async () => {
+  assert.equal(await load('rpc'), undefined);
+  assert.equal(await load('json'), undefined);
+  assert.equal(await load('print'), undefined);
 });
 
-test('the header follows a palette change', () => {
-  const factory = load('tui');
+test('the header follows a palette change', async () => {
+  const factory = await load('tui');
   // A live theme, like Pi's: the same object answers with the palette in use.
   let muted = '\x1b[38;2;176;167;156m';
   const component = factory({ requestRender() {} }, { fg: (_color, text) => `${muted}${text}\x1b[39m` });
