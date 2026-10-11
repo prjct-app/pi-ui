@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Remove the tool-row overrides, `/activity`, and `/activity-settings` from pi-ui. Install `@prjct.app/pi-activity` (0.2.3) for compact tool rows; loading both would override the same built-in tools.
+- Remove the activity-only modules (`src/activity*.ts`, `src/components.ts`, `src/format.ts`, `src/types.ts`).
+
 ## 0.1.0
 
 - Combine Pi Activity, Pi Header, and Pi Statusline into one installable Pi extension.
