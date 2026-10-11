@@ -1,13 +1,11 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-import registerActivity from "./src/activity.ts";
 import registerHeader from "./src/header.ts";
 import registerTranscript from "./src/transcript.ts";
 import registerStatusline from "./src/statusline.ts";
 
-/** Install the complete pi-ui experience as one Pi extension. */
+/** Install the pi-ui header, transcript and status line as one Pi extension. Tool rows come from @prjct.app/pi-activity. */
 export default function pUi(pi: ExtensionAPI): void {
-	registerActivity(pi);
 	registerHeader(pi);
 	registerTranscript(pi);
 	registerStatusline(pi);

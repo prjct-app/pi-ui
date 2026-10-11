@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import pUi from '../index.ts';
 
-test('the single entry point composes all four UI capabilities', () => {
+test('the single entry point composes header, transcript and statusline without tool overrides', () => {
   const handlers = new Map();
   const tools = new Map();
   const commands = new Map();
@@ -20,8 +20,8 @@ test('the single entry point composes all four UI capabilities', () => {
 
   pUi(pi);
 
-  assert.equal(handlers.get('session_start')?.length, 4);
-  assert.deepEqual([...tools.keys()].sort(), ['bash', 'edit', 'find', 'grep', 'ls', 'read', 'write']);
-  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings', 'header']);
-  assert.deepEqual([...renderers.keys()].sort(), ['activity-settings', 'activity-summary']);
+  assert.equal(handlers.get('session_start')?.length, 3);
+  assert.deepEqual([...tools.keys()], []);
+  assert.deepEqual([...commands.keys()].sort(), ['header']);
+  assert.deepEqual([...renderers.keys()], []);
 });
