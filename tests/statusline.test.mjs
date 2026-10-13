@@ -7,11 +7,11 @@ import minimalFooter from '../src/statusline.ts';
 function harness(initialSessionName, extensionStatuses = new Map()) {
   const widgets = new Map();
   const handlers = new Map();
-  let sessionName = initialSessionName;
-  let footer;
+  const session = { name: initialSessionName };
+  const view = { footer: undefined };
 
   minimalFooter({
-    getSessionName: () => sessionName,
+    getSessionName: () => session.name,
     getThinkingLevel: () => 'high',
     on: (name, handler) => handlers.set(name, handler),
   });
@@ -24,7 +24,7 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
     ui: {
       setWidget: (key, factory, options) => { widgets.set(key, { factory, options }); },
       setFooter: (factory) => {
-        footer = factory(
+        view.footer = factory(
           { requestRender() {} },
           { fg: (_color, text) => text },
           {
@@ -41,12 +41,12 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
 
   return {
     render(width = 160) {
-      const line = footer.render(width).at(-1);
+      const line = view.footer.render(width).at(-1);
       assert.ok(visibleWidth(line) <= width);
       return plain(line);
     },
     lines(width = 160) {
-      return footer.render(width).map(line => plain(line));
+      return view.footer.render(width).map(line => plain(line));
     },
     modes(width = 160) {
       const { factory, options } = widgets.get('prjct-modes');
@@ -54,7 +54,7 @@ function harness(initialSessionName, extensionStatuses = new Map()) {
       return factory({ requestRender() {} }, { fg: (_color, text) => text }).render(width).map(line => plain(line));
     },
     setSessionName(name) {
-      sessionName = name;
+      session.name = name;
     },
   };
 }

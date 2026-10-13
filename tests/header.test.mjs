@@ -9,18 +9,18 @@ import { join } from 'node:path';
 
 async function load(mode = 'tui') {
   const handlers = new Map();
-  let headerFactory;
+  const captured = { factory: undefined };
   const base = mkdtempSync(join(tmpdir(), 'pi-ui-header-'));
   startupLogo({ events: {}, registerCommand() {}, on: (name, handler) => handlers.set(name, handler) }, { settingsPath: join(base, 'header.json') });
   const ctx = {
     mode,
     ui: {
-      setHeader: (factory) => { headerFactory = factory; },
+      setHeader: (factory) => { captured.factory = factory; },
     },
   };
   await handlers.get('session_start')({}, ctx);
   rmSync(base, { recursive: true, force: true });
-  return headerFactory;
+  return captured.factory;
 }
 
 test('TUI startup installs a documented custom header component', async () => {
@@ -45,10 +45,10 @@ test('non-TUI modes do not install a header', async () => {
 test('the header follows a palette change', async () => {
   const factory = await load('tui');
   // A live theme, like Pi's: the same object answers with the palette in use.
-  let muted = '\x1b[38;2;176;167;156m';
-  const component = factory({ requestRender() {} }, { fg: (_color, text) => `${muted}${text}\x1b[39m` });
+  const muted = { value: '\x1b[38;2;176;167;156m' };
+  const component = factory({ requestRender() {} }, { fg: (_color, text) => `${muted.value}${text}\x1b[39m` });
   const versionLine = () => component.render(80).find((line) => line.includes('Pi coding agent v'));
   assert.ok(versionLine().includes('\x1b[38;2;176;167;156m'));
-  muted = '\x1b[38;2;184;193;209m';
+  muted.value = '\x1b[38;2;184;193;209m';
   assert.ok(versionLine().includes('\x1b[38;2;184;193;209m'), 'repainted in the new palette');
 });

@@ -27,7 +27,7 @@ const textOf = (content: unknown): string => typeof content === "string"
 	? content
 	: Array.isArray(content) ? content.filter((part) => part?.type === "text").map((part) => part.text).join("") : "";
 
-let ui: ExtensionContext["ui"] | undefined;
+const transcriptUi = { ui: undefined as ExtensionContext["ui"] | undefined };
 
 /**
  * Real times from the session, so a resumed session shows when things
@@ -88,7 +88,7 @@ function wrap(target: unknown, next: (this: any, lines: string[]) => string[]): 
 export default function transcript(pi: ExtensionAPI): void {
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") return;
-		ui = ctx.ui;
+		transcriptUi.ui = ctx.ui;
 		index(ctx);
 	});
 	pi.on("session_tree", (_event, ctx) => index(ctx));
@@ -97,7 +97,7 @@ export default function transcript(pi: ExtensionAPI): void {
 	// A user message is drawn between a blank line above and below, and the
 	// chat adds another before it. Both pads go; the stamp takes the top one.
 	wrap(UserMessageComponent, function (this: UserView & object, lines) {
-		const theme = ui?.theme;
+		const theme = transcriptUi.ui?.theme;
 		if (!theme || lines.length < 3 || !blank(lines[0]!) || !blank(lines[lines.length - 1]!)) return lines;
 		const body = lines.slice(1, -1);
 		body[body.length - 1] += marks(lines[lines.length - 1]!);
@@ -107,7 +107,7 @@ export default function transcript(pi: ExtensionAPI): void {
 
 	// Pi's prose opens with one blank line; the stamp goes right under it.
 	wrap(AssistantMessageComponent, function (this: AssistantView, lines) {
-		const theme = ui?.theme;
+		const theme = transcriptUi.ui?.theme;
 		const message = this.lastMessage;
 		if (!theme || !message?.timestamp || lines.length < 2 || !blank(lines[0]!) || !textOf(message.content).trim()) return lines;
 		return [lines[0]!, `${" ".repeat(this.outputPad ?? 1)}${stamp(theme, "p", message.timestamp)}`, ...lines.slice(1)];
