@@ -26,6 +26,7 @@
     "image": "https://raw.githubusercontent.com/prjct-app/pi-ui/main/docs/cover.png"
   },
   "scripts": {
+    "prepublishOnly": "node -e \"if (process.env.GITHUB_ACTIONS !== 'true') { console.error('Publish only from the Release workflow: merge to main.'); process.exit(1); }\"",
     "build": "rm -rf build && mkdir -p build && npm pack --ignore-scripts --pack-destination build >/dev/null && tar -xzf build/*.tgz -C build --strip-components=1 && rm -f build/*.tgz",
     "check": "tsc --noEmit",
     "test": "export PI_CODING_AGENT_DIR=\"$(mktemp -d)\" PRJCT_HOME=\"$(mktemp -d)\" && node --import tsx --test tests/*.test.ts tests/*.test.mjs",
