@@ -1,3 +1,15 @@
+## [1.0.0](https://github.com/prjct-app/pi-ui/compare/v0.1.5...v1.0.0) (2026-10-15)
+
+### ⚠ BREAKING CHANGES
+
+* pi-ui no longer sets a startup header or registers /header.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Features
+
+* decouple pi-ui from pi-header ([b8342ef](https://github.com/prjct-app/pi-ui/commit/b8342ef987448b3a4b3faf6df24359fb2ff26c92))
+
 # Changelog
 
 ## Unreleased
