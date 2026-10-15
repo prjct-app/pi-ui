@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import pUi from '../index.ts';
 
-test('the single entry point composes header, transcript and statusline without tool overrides', () => {
+test('the single entry point composes transcript and statusline without tool overrides', () => {
   const handlers = new Map();
   const tools = new Map();
   const commands = new Map();
@@ -20,8 +20,8 @@ test('the single entry point composes header, transcript and statusline without 
 
   pUi(pi);
 
-  assert.equal(handlers.get('session_start')?.length, 3);
+  assert.equal(handlers.get('session_start')?.length, 2);
   assert.deepEqual([...tools.keys()], []);
-  assert.deepEqual([...commands.keys()].sort(), ['header']);
+  assert.deepEqual([...commands.keys()], []);
   assert.deepEqual([...renderers.keys()], []);
 });

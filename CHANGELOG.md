@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Breaking: pi-ui no longer depends on `@prjct.app/pi-header` or sets a startup header. The `/header` command, the Pi logo assets and their license notice are removed. Install `@prjct.app/pi-header` on its own if you want a header.
+
 ## 0.1.5 (2026-10-12)
 
 - Code: no `let` bindings; mutable state lives in one named object. Behaviour is unchanged.
