@@ -7,7 +7,7 @@
 - Source repository: [prjct-app/pi-ui](https://github.com/prjct-app/pi-ui).
 - Tested host: Pi `0.85.1`; Node.js `22.19+`.
 
-pi-ui 0.1.4 keeps the header, footer, and transcript of the former pi-ui bundle. Tool rows and the activity inspector moved to `@prjct.app/pi-activity`, which is installed alongside it.
+pi-ui keeps the footer and transcript of the former pi-ui bundle. Tool rows and the activity inspector moved to `@prjct.app/pi-activity`, which is installed alongside it. The startup header is the separate `@prjct.app/pi-header` package; pi-ui does not depend on it.
 
 ## One-extension manifest
 
@@ -24,7 +24,7 @@ The package declares exactly one Pi extension:
 }
 ```
 
-`index.ts` is the sole Pi extension entry point. It composes internal header, transcript, and status-line registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
+`index.ts` is the sole Pi extension entry point. It composes internal transcript and status-line registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
 
 ## Dependencies
 
@@ -32,13 +32,13 @@ Pi-provided libraries are peer dependencies with `*` ranges and are not bundled.
 
 ## Public interfaces
 
-The package uses documented tool overrides and render contexts, lifecycle and tool-execution events, custom session entries and renderers, commands, working messages, widgets, status text, `ctx.ui.custom()`, `SettingsList`, `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, footer branch subscriptions and extension statuses, session names, context usage, image rendering, and TUI width utilities.
+The package uses documented tool overrides and render contexts, lifecycle and tool-execution events, custom session entries and renderers, commands, working messages, widgets, status text, `ctx.ui.custom()`, `SettingsList`, `ctx.ui.setFooter()`, footer branch subscriptions and extension statuses, session names, context usage, image rendering, and TUI width utilities.
 
 Terminal-only behavior is guarded with `ctx.mode === "tui"`. The transcript does not override tool rows; pi-activity owns them. The custom footer displays only Pi Plan and Codex Fast statuses.
 
 ## Published contents
 
-The `files` allowlist includes the single TypeScript entry point, internal runtime modules, logo assets, the `prjct-theme` theme resource, user documentation, and required licenses. Tests, repository settings, dependency folders, and Git history are excluded.
+The `files` allowlist includes the single TypeScript entry point, internal runtime modules, the `prjct-theme` theme resource, and user documentation. Tests, repository settings, dependency folders, and Git history are excluded.
 
 Run `npm run check:package` to inspect the prospective tarball before release.
 

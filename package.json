@@ -1,7 +1,7 @@
 {
   "name": "@prjct.app/pi-ui",
   "version": "0.1.5",
-  "description": "A unified Pi interface with a branded startup header, a transcript, and a focused status line. Tool rows come from pi-activity.",
+  "description": "A unified Pi interface with a transcript and a focused status line. Tool rows come from pi-activity.",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -10,7 +10,6 @@
     "pi-coding-agent",
     "pi-extension",
     "developer-tools",
-    "header",
     "statusline",
     "terminal",
     "tui",
@@ -26,6 +25,7 @@
     "image": "https://raw.githubusercontent.com/prjct-app/pi-ui/main/docs/cover.png"
   },
   "scripts": {
+    "prepublishOnly": "node -e \"if (process.env.GITHUB_ACTIONS !== 'true') { console.error('Publish only from the Release workflow: merge to main.'); process.exit(1); }\"",
     "build": "rm -rf build && mkdir -p build && npm pack --ignore-scripts --pack-destination build >/dev/null && tar -xzf build/*.tgz -C build --strip-components=1 && rm -f build/*.tgz",
     "check": "tsc --noEmit",
     "test": "export PI_CODING_AGENT_DIR=\"$(mktemp -d)\" PRJCT_HOME=\"$(mktemp -d)\" && node --import tsx --test tests/*.test.ts tests/*.test.mjs",
@@ -66,12 +66,9 @@
   "files": [
     "index.ts",
     "src",
-    "assets",
     "themes",
     "README.md",
     "LICENSE",
-    "THIRD_PARTY_NOTICES.md",
-    "licenses",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
     "docs/package.md",
@@ -79,15 +76,10 @@
   ],
   "piBuild": {
     "copy": [
-      "assets",
       "themes"
-    ],
-    "external": [
-      "@prjct.app/pi-header"
     ]
   },
   "dependencies": {
-    "@prjct.app/pi-header": "^0.2.0",
     "@prjct.app/pi-tui-kit": "^0.3.1"
   }
 }
