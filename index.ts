@@ -1,10 +1,31 @@
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 
-import registerTranscript from "./src/transcript.ts";
-import registerStatusline from "./src/statusline.ts";
+import registerActivity from "./src/activity/index.ts";
+import registerHeader from "./src/header/index.ts";
+import { readSettings, type UiSettings } from "./src/settings.ts";
+import { applyFooter } from "./src/statusline.ts";
+import registerTranscript, { setTranscript } from "./src/transcript.ts";
+import registerUiCommand from "./src/ui-command.ts";
 
-/** Install the pi-ui transcript and status line as one Pi extension. Tool rows come from @prjct.app/pi-activity. */
+/**
+ * pi-ui is the one interface layer: the header, transcript times, compact
+ * tool activity, and the footer. Every part can be switched off with /ui, and
+ * an off part leaves Pi's own in place (an off header is hidden).
+ */
 export default function pUi(pi: ExtensionAPI): void {
+	const settings = readSettings();
+	const header = registerHeader(pi);
+
+	const apply = async (ctx: ExtensionContext, next: UiSettings): Promise<void> => {
+		setTranscript(next.transcript);
+		applyFooter(pi, ctx, next.footer);
+		await header.apply(ctx, next.header);
+	};
+
 	registerTranscript(pi);
-	registerStatusline(pi);
+	// Activity replaces Pi's built-in tools, which can only happen while the extension loads.
+	if (settings.activity) registerActivity(pi);
+	registerUiCommand(pi, apply, settings.activity);
+
+	pi.on("session_start", (_event, ctx) => apply(ctx, readSettings()));
 }

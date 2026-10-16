@@ -7,7 +7,7 @@
 - Source repository: [prjct-app/pi-ui](https://github.com/prjct-app/pi-ui).
 - Tested host: Pi `0.85.1`; Node.js `22.19+`.
 
-pi-ui keeps the footer and transcript of the former pi-ui bundle. Tool rows and the activity inspector moved to `@prjct.app/pi-activity`, which is installed alongside it. The startup header is the separate `@prjct.app/pi-header` package; pi-ui does not depend on it.
+pi-ui is the single interface package: the startup header (Pi's own by default, or a pixel-art logo; formerly `@prjct.app/pi-header`), transcript times, compact tool activity (formerly `@prjct.app/pi-activity`), and the footer. Each part is switched with `/ui` and stored in `$PRJCT_HOME/pi-ui/settings.json`, defaulting to `~/.prjct/pi-ui/settings.json`.
 
 ## One-extension manifest
 
@@ -24,17 +24,17 @@ The package declares exactly one Pi extension:
 }
 ```
 
-`index.ts` is the sole Pi extension entry point. It composes internal transcript and status-line registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
+`index.ts` is the sole Pi extension entry point. It reads the `/ui` switches, then composes the internal header, transcript, activity, and footer registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
 
 ## Dependencies
 
-Pi-provided libraries are peer dependencies with `*` ranges and are not bundled. Exact Pi 0.85.1 development dependencies establish the tested baseline; the peer wildcard does not claim compatibility with every Pi release.
+`sharp` is a runtime dependency for header logos; it is imported only when a pixel-art logo is decoded. Pi-provided libraries are peer dependencies with `*` ranges and are not bundled. Exact Pi 0.85.1 development dependencies establish the tested baseline; the peer wildcard does not claim compatibility with every Pi release.
 
 ## Public interfaces
 
-The package uses documented tool overrides and render contexts, lifecycle and tool-execution events, custom session entries and renderers, commands, working messages, widgets, status text, `ctx.ui.custom()`, `SettingsList`, `ctx.ui.setFooter()`, footer branch subscriptions and extension statuses, session names, context usage, image rendering, and TUI width utilities.
+The package uses documented tool overrides and render contexts, lifecycle and tool-execution events, custom session entries and renderers, commands, working messages, widgets, status text, `ctx.ui.custom()`, `SettingsList`, `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, footer branch subscriptions and extension statuses, session names, context usage, image rendering, and TUI width utilities.
 
-Terminal-only behavior is guarded with `ctx.mode === "tui"`. The transcript does not override tool rows; pi-activity owns them. The custom footer displays only Pi Plan and Codex Fast statuses.
+Terminal-only behavior is guarded with `ctx.mode === "tui"`. Activity overrides the seven built-in tools only when it is on at load, because Pi registers tools while extensions load; the header, footer, and transcript switches apply at once through `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, and a render flag. The custom footer displays only Pi Plan and Codex Fast statuses.
 
 ## Published contents
 
