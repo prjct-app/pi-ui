@@ -52,17 +52,18 @@ test('the prjct logo replaces the header, fits its width, and /header pi gives P
   assert.deepEqual(await loadLogo(h.settingsPath), { kind: 'pi' });
 });
 
-test('a header switched off draws nothing, whatever the logo, and comes back when switched on', async t => {
+test("a header switched off shows Pi's own, whatever the logo, and the logo comes back when switched on", async t => {
   const h = await harness(t);
   await h.command('prjct');
   await h.header.apply(h.ctx, false);
-  assert.deepEqual(draw(h.state), []);
-  await h.command('pi');
-  assert.deepEqual(draw(h.state), [], 'choosing a logo while off keeps it hidden');
-  assert.match(h.notices.at(-1).text, /turn it on in \/ui/);
-  await h.command('prjct');
+  assert.equal(h.state.factory, undefined, "off restores Pi's built-in header");
+  await h.command('logo');
+  await h.handlers.get('input')({ text: svg, source: 'interactive' }, h.ctx);
+  assert.equal(h.state.factory, undefined, 'choosing a logo while off keeps Pi\'s header');
+  assert.match(h.notices.at(-1).text, /custom header is off, so Pi's own shows/);
   await h.header.apply(h.ctx, true);
   assert.match(draw(h.state).map(stripVTControlCharacters).join('\n'), /prjct \/ pi agent/);
+  assert.equal((await loadLogo(h.settingsPath)).kind, 'custom');
 });
 
 for (const mode of ['rpc', 'json', 'print']) test(`${mode} does not set or capture a header`, async t => {

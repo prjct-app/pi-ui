@@ -11,7 +11,7 @@ import registerUiCommand from "./src/ui-command.ts";
 /**
  * pi-ui is the one interface layer: the header, transcript times, compact
  * tool activity, the footer, and the palette. Every part can be switched off with /ui, and
- * an off part leaves Pi's own in place (an off header is hidden).
+ * an off part leaves Pi's own in place.
  */
 export default function pUi(pi: ExtensionAPI): void {
 	const settings = readSettings();

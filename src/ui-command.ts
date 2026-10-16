@@ -4,7 +4,7 @@ import { openChecklist } from "@prjct.app/pi-tui-kit";
 import { PARTS, readSettings, writeSettings, type Part, type UiSettings } from "./settings.ts";
 
 const LABELS: Record<Part, { label: string; meta: string }> = {
-	header: { label: "Header — Pi's, or the logo chosen in /header", meta: "live" },
+	header: { label: "Header — the logo chosen in /header (off: Pi's own)", meta: "live" },
 	transcript: { label: "Transcript — u./p. times over messages", meta: "new messages" },
 	activity: { label: "Activity — compact tool rows and /activity", meta: "restart Pi" },
 	footer: { label: "Footer — project, branch, model, context", meta: "live" },
@@ -29,7 +29,7 @@ export default function registerUiCommand(pi: ExtensionAPI, apply: Apply, loaded
 			const current = readSettings();
 			const result = await openChecklist(ctx, {
 				title: "Interface",
-				message: "Checked parts are on. An unchecked header is hidden; the other parts fall back to Pi's own.",
+				message: "Checked parts are on. Unchecked parts fall back to Pi's own.",
 				items: PARTS.map((id) => ({ id, ...LABELS[id] })),
 				initial: PARTS.filter((part) => current[part]),
 				min: 0,
