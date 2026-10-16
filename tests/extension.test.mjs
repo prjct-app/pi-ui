@@ -86,7 +86,7 @@ test('switched-off parts leave Pi in charge', () => withHome(async () => {
 
   const view = { notices: [] };
   await start(handlers, fakeCtx(view));
-  assert.deepEqual(view.header().render(80), [], 'header off draws nothing');
+  assert.equal(view.header, undefined, "header off keeps Pi's own header");
   assert.equal(view.footer, undefined, "footer off gives Pi's footer back");
 }));
 
@@ -98,7 +98,7 @@ test('/ui saves the checked parts, applies them live, and asks for a restart onl
   await commands.get('ui').handler('', fakeCtx(view, ['footer', 'transcript']));
 
   assert.deepEqual(JSON.parse(await readFile(settingsPath(), 'utf8')), { header: false, transcript: true, activity: false, footer: true, palette: false });
-  assert.deepEqual(view.header().render(80), []);
+  assert.equal(view.header, undefined);
   assert.equal(typeof view.footer, 'function');
   assert.equal(view.notices.length, 1);
   assert.match(view.notices[0].message, /Activity turns off when Pi starts again/);

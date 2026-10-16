@@ -6,7 +6,7 @@ The one interface layer for PI Agent. pi-ui owns every change it makes to Pi's s
 
 | Part | What it does | Off means | Takes effect |
 | --- | --- | --- | --- |
-| Header | Pi's own startup header by default, or the prjct logo or your own pixel-art logo chosen with `/header`. | No startup header. | At once |
+| Header | The logo chosen with `/header`: Pi's own header by default, or the prjct logo, or your own pixel-art logo. | Pi's own startup header, whatever `/header` chose. | At once |
 | Transcript | Puts `u. 16:18` over your messages and `p. 16:22` over Pi's prose. | Pi's plain transcript. | Messages drawn after the change |
 | Activity | Compact, expandable tool rows, a live widget for running tools, a summary after each run, `/activity` and `/activity-settings`. | Pi's built-in tool rows. | When Pi starts again |
 | Footer | Project, session, Git branch, model, thinking level, and context usage. | Pi's default footer. | At once |
@@ -60,7 +60,7 @@ The header starts as Pi's own. `/header` picks another:
 - `/header prjct` — the prjct logo with `prjct / pi agent · v…`.
 - `/header logo` then paste an image or SVG, or `/header logo <path>` — pixel art from your reference, previewed before it is saved. `/header cancel` stops the capture.
 
-The choice is stored in `~/.prjct/pi-ui/header.json`. While the header is off in `/ui`, a new choice is saved but stays hidden.
+The choice is stored in `~/.prjct/pi-ui/header.json`. While the header is off in `/ui`, Pi's own header shows; a new choice is saved and appears when the header is turned back on.
 
 ## Activity
 

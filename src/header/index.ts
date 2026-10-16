@@ -11,7 +11,7 @@ import { createPixelArt, renderPixelArt, type PixelArt } from './pixel-art.ts';
 /**
  * The startup header. "pi" is Pi's own header, untouched; "prjct" and a
  * custom logo replace it with pixel art. When the header is switched off in
- * /ui, nothing is drawn, whatever the logo.
+ * /ui, Pi's own header is shown, whatever the logo.
  */
 
 const prjctLogo = (): Buffer => readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'assets', 'prjct-logo.png'));
@@ -25,7 +25,6 @@ const toPixelArt = (logo: Exclude<Logo, { kind: 'pi' }>): Promise<PixelArt> => {
 const painted = (paint: () => string): Component => ({
   render: width => new Text(paint(), 0, 0).render(width), invalidate() {},
 });
-const NO_HEADER = (): Component => ({ render: () => [], invalidate() {} });
 const captureHint = 'Paste one reference image or SVG, then send it. /header cancel exits.';
 
 export function headerPath(): string {
@@ -64,7 +63,7 @@ async function preview(art: PixelArt, ctx: ExtensionContext): Promise<boolean> {
 }
 
 export type Header = {
-  /** Draw the header for the current logo, or nothing when it is switched off. */
+  /** Draw the header for the current logo, or Pi's own when it is switched off. */
   apply(ctx: ExtensionContext, on: boolean): Promise<void>;
 };
 
@@ -82,8 +81,7 @@ export default function registerHeader(pi: ExtensionAPI, options: { settingsPath
   const render = (ctx: ExtensionContext): void => {
     if (ctx.mode !== 'tui') return;
     const { on, logo, art } = session.state;
-    if (!on) { ctx.ui.setHeader(NO_HEADER); return; }
-    if (logo.kind === 'pi') { ctx.ui.setHeader(undefined); return; }
+    if (!on || logo.kind === 'pi') { ctx.ui.setHeader(undefined); return; }
     ctx.ui.setHeader((_tui, theme) => {
       const header = new Box(2, 1);
       const monochrome = logo.kind === 'custom' ? undefined : (text: string) => theme.fg('text', text);
@@ -101,7 +99,7 @@ export default function registerHeader(pi: ExtensionAPI, options: { settingsPath
     set({ logo, art, pending: false });
     ctx.ui.setWidget('pi-ui-header-reference', undefined);
     render(ctx);
-    ctx.ui.notify(session.state.on ? `Header logo: ${logo.kind}.` : `Header logo: ${logo.kind}. The header is off; turn it on in /ui.`, 'info');
+    ctx.ui.notify(session.state.on ? `Header logo: ${logo.kind}.` : `Header logo: ${logo.kind}. The custom header is off, so Pi's own shows; turn it on in /ui.`, 'info');
   };
   const paste = (ctx: ExtensionContext): void => {
     set({ pending: true });
