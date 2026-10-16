@@ -1,7 +1,7 @@
 {
   "name": "@prjct.app/pi-ui",
   "version": "1.0.0",
-  "description": "A unified Pi interface with a transcript and a focused status line. Tool rows come from pi-activity.",
+  "description": "One Pi interface layer: the startup header, transcript times, compact tool activity, a focused footer, and 53 color palettes, each switchable with /ui.",
   "type": "module",
   "keywords": [
     "pi-package",
@@ -13,7 +13,13 @@
     "statusline",
     "terminal",
     "tui",
-    "transcript"
+    "transcript",
+    "activity-log",
+    "tool-calling",
+    "theme",
+    "themes",
+    "palette",
+    "color-scheme"
   ],
   "pi": {
     "extensions": [
@@ -28,7 +34,7 @@
     "prepublishOnly": "node -e \"if (process.env.GITHUB_ACTIONS !== 'true') { console.error('Publish only from the Release workflow: merge to main.'); process.exit(1); }\"",
     "build": "rm -rf build && mkdir -p build && npm pack --ignore-scripts --pack-destination build >/dev/null && tar -xzf build/*.tgz -C build --strip-components=1 && rm -f build/*.tgz",
     "check": "tsc --noEmit",
-    "test": "export PI_CODING_AGENT_DIR=\"$(mktemp -d)\" PRJCT_HOME=\"$(mktemp -d)\" && node --import tsx --test tests/*.test.ts tests/*.test.mjs",
+    "test": "export PI_CODING_AGENT_DIR=\"$(mktemp -d)\" PRJCT_HOME=\"$(mktemp -d)\" && node --import tsx --test --test-concurrency=1 tests/*.test.ts tests/*.test.mjs",
     "check:package": "npm pack --dry-run --ignore-scripts",
     "build:pi": "node scripts/build-pi.mjs"
   },
@@ -66,6 +72,7 @@
   "files": [
     "index.ts",
     "src",
+    "assets",
     "themes",
     "README.md",
     "LICENSE",
@@ -80,6 +87,7 @@
     ]
   },
   "dependencies": {
-    "@prjct.app/pi-tui-kit": "^0.3.1"
+    "@prjct.app/pi-tui-kit": "^0.3.1",
+    "sharp": "^0.35.5"
   }
 }
