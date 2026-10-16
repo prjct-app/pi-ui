@@ -1,6 +1,6 @@
 {
   "name": "@prjct.app/pi-ui",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "One Pi interface layer: the startup header, transcript times, compact tool activity, a focused footer, and 53 color palettes, each switchable with /ui.",
   "type": "module",
   "keywords": [

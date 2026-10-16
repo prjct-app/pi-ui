@@ -1,3 +1,9 @@
+## [2.0.1](https://github.com/prjct-app/pi-ui/compare/v2.0.0...v2.0.1) (2026-10-16)
+
+### Bug Fixes
+
+* an off header shows Pi's own header instead of nothing ([46a94cb](https://github.com/prjct-app/pi-ui/commit/46a94cb6e5e3be7e0696636876f0705bf9067725))
+
 ## [2.0.0](https://github.com/prjct-app/pi-ui/compare/v1.0.0...v2.0.0) (2026-10-16)
 
 ### ⚠ BREAKING CHANGES
