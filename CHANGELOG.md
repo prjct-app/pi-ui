@@ -1,3 +1,18 @@
+## [2.0.0](https://github.com/prjct-app/pi-ui/compare/v1.0.0...v2.0.0) (2026-10-16)
+
+### ⚠ BREAKING CHANGES
+
+* pi-ui registers the read, bash, edit, write, find, grep
+and ls tools plus /activity, /activity-settings and /header. Remove
+@prjct.app/pi-activity and @prjct.app/pi-header before upgrading.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Features
+
+* absorb pi-palette with its own /ui switch ([d26acca](https://github.com/prjct-app/pi-ui/commit/d26acca19ad76d2d966a19907514942275698ec2))
+* one interface package with /ui switches for every part ([9e51fcd](https://github.com/prjct-app/pi-ui/commit/9e51fcd1cae98c6289b7534f01f80514345771bb))
+
 ## [1.0.0](https://github.com/prjct-app/pi-ui/compare/v0.1.5...v1.0.0) (2026-10-15)
 
 ### ⚠ BREAKING CHANGES
