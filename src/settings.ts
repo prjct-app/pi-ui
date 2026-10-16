@@ -3,11 +3,11 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
 /** The parts of the interface pi-ui can switch off. Each is on unless the person turned it off. */
-export const PARTS = ["header", "transcript", "activity", "footer"] as const;
+export const PARTS = ["header", "transcript", "activity", "footer", "palette"] as const;
 export type Part = (typeof PARTS)[number];
 export type UiSettings = Record<Part, boolean>;
 
-export const DEFAULTS: UiSettings = { header: true, transcript: true, activity: true, footer: true };
+export const DEFAULTS: UiSettings = { header: true, transcript: true, activity: true, footer: true, palette: true };
 
 export function settingsPath(): string {
 	return join(process.env.PRJCT_HOME ?? join(homedir(), ".prjct"), "pi-ui", "settings.json");

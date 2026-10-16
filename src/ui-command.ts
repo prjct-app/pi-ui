@@ -8,18 +8,19 @@ const LABELS: Record<Part, { label: string; meta: string }> = {
 	transcript: { label: "Transcript — u./p. times over messages", meta: "new messages" },
 	activity: { label: "Activity — compact tool rows and /activity", meta: "restart Pi" },
 	footer: { label: "Footer — project, branch, model, context", meta: "live" },
+	palette: { label: "Palette — /palette themes, sync between windows, backups", meta: "live" },
 };
 
 export type Apply = (ctx: ExtensionContext, settings: UiSettings) => Promise<void>;
 
 /**
  * /ui: one docked checklist with a switch for every part of the interface
- * pi-ui changes. Header, footer and transcript follow at once; activity
+ * pi-ui changes. Header, footer, transcript and palette follow at once; activity
  * replaces Pi's tools when Pi starts, so it waits for the next start.
  */
 export default function registerUiCommand(pi: ExtensionAPI, apply: Apply, loadedActivity: boolean): void {
 	pi.registerCommand("ui", {
-		description: "Turn the header, transcript times, activity rows, and footer on or off.",
+		description: "Turn the header, transcript times, activity rows, footer, and palette on or off.",
 		handler: async (_args, ctx) => {
 			if (ctx.mode !== "tui") {
 				if (ctx.hasUI) ctx.ui.notify("/ui requires interactive TUI mode.", "error");

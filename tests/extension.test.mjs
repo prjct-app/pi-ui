@@ -68,7 +68,7 @@ test('with no settings every part is on and Pi keeps its own header', () => with
   pUi(pi);
 
   assert.deepEqual([...tools.keys()].sort(), ['bash', 'edit', 'find', 'grep', 'ls', 'read', 'write']);
-  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings', 'header', 'ui']);
+  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings', 'header', 'palette', 'ui']);
 
   const view = { notices: [] };
   await start(handlers, fakeCtx(view));
@@ -77,12 +77,12 @@ test('with no settings every part is on and Pi keeps its own header', () => with
 }));
 
 test('switched-off parts leave Pi in charge', () => withHome(async () => {
-  writeSettings({ header: false, transcript: false, activity: false, footer: false });
+  writeSettings({ header: false, transcript: false, activity: false, footer: false, palette: false });
   const { pi, handlers, tools, commands } = fakePi();
   pUi(pi);
 
   assert.deepEqual([...tools.keys()], [], 'activity off keeps Pi\'s tools');
-  assert.deepEqual([...commands.keys()].sort(), ['header', 'ui']);
+  assert.deepEqual([...commands.keys()].sort(), ['activity', 'activity-settings', 'header', 'palette', 'ui'].filter((name) => !name.startsWith('activity')));
 
   const view = { notices: [] };
   await start(handlers, fakeCtx(view));
@@ -97,14 +97,14 @@ test('/ui saves the checked parts, applies them live, and asks for a restart onl
   const view = { notices: [] };
   await commands.get('ui').handler('', fakeCtx(view, ['footer', 'transcript']));
 
-  assert.deepEqual(JSON.parse(await readFile(settingsPath(), 'utf8')), { header: false, transcript: true, activity: false, footer: true });
+  assert.deepEqual(JSON.parse(await readFile(settingsPath(), 'utf8')), { header: false, transcript: true, activity: false, footer: true, palette: false });
   assert.deepEqual(view.header().render(80), []);
   assert.equal(typeof view.footer, 'function');
   assert.equal(view.notices.length, 1);
   assert.match(view.notices[0].message, /Activity turns off when Pi starts again/);
 
   view.notices.length = 0;
-  await commands.get('ui').handler('', fakeCtx(view, ['header', 'transcript', 'activity', 'footer']));
+  await commands.get('ui').handler('', fakeCtx(view, ['header', 'transcript', 'activity', 'footer', 'palette']));
   assert.equal(view.header, undefined, "turning the header back on restores Pi's");
   assert.deepEqual(view.notices, [], 'activity matches what loaded, so no restart is needed');
 }));

@@ -7,7 +7,7 @@
 - Source repository: [prjct-app/pi-ui](https://github.com/prjct-app/pi-ui).
 - Tested host: Pi `0.85.1`; Node.js `22.19+`.
 
-pi-ui is the single interface package: the startup header (Pi's own by default, or a pixel-art logo; formerly `@prjct.app/pi-header`), transcript times, compact tool activity (formerly `@prjct.app/pi-activity`), and the footer. Each part is switched with `/ui` and stored in `$PRJCT_HOME/pi-ui/settings.json`, defaulting to `~/.prjct/pi-ui/settings.json`.
+pi-ui is the single interface package: the startup header (Pi's own by default, or a pixel-art logo; formerly `@prjct.app/pi-header`), transcript times, compact tool activity (formerly `@prjct.app/pi-activity`), the footer, and the palette (formerly `@prjct.app/pi-palette`). Each part is switched with `/ui` and stored in `$PRJCT_HOME/pi-ui/settings.json`, defaulting to `~/.prjct/pi-ui/settings.json`.
 
 ## One-extension manifest
 
@@ -24,7 +24,7 @@ The package declares exactly one Pi extension:
 }
 ```
 
-`index.ts` is the sole Pi extension entry point. It reads the `/ui` switches, then composes the internal header, transcript, activity, and footer registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
+`index.ts` is the sole Pi extension entry point. It reads the `/ui` switches, then composes the internal header, transcript, activity, footer, and palette registrars from `src/`; those modules are implementation details, not separately discovered extensions. The same package also contributes the declarative `prjct-theme` resource without introducing another extension.
 
 ## Dependencies
 
@@ -34,7 +34,7 @@ The package declares exactly one Pi extension:
 
 The package uses documented tool overrides and render contexts, lifecycle and tool-execution events, custom session entries and renderers, commands, working messages, widgets, status text, `ctx.ui.custom()`, `SettingsList`, `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, footer branch subscriptions and extension statuses, session names, context usage, image rendering, and TUI width utilities.
 
-Terminal-only behavior is guarded with `ctx.mode === "tui"`. Activity overrides the seven built-in tools only when it is on at load, because Pi registers tools while extensions load; the header, footer, and transcript switches apply at once through `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, and a render flag. The custom footer displays only Pi Plan and Codex Fast statuses.
+Terminal-only behavior is guarded with `ctx.mode === "tui"`. Activity overrides the seven built-in tools only when it is on at load, because Pi registers tools while extensions load; the header, footer, transcript, and palette switches apply at once through `ctx.ui.setHeader()`, `ctx.ui.setFooter()`, a render flag, and starting or stopping the palette's window sync and backup check. Palette theme files are written into Pi's themes folder on every load, whatever the switch, so a palette named in settings is always found. The custom footer displays only Pi Plan and Codex Fast statuses.
 
 ## Published contents
 
