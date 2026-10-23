@@ -5,7 +5,7 @@
 - npm name: `@prjct.app/pi-ui`.
 - Initial version: `0.1.0`.
 - Source repository: [prjct-app/pi-ui](https://github.com/prjct-app/pi-ui).
-- Tested host: Pi `0.85.1`; Node.js `22.19+`.
+- Tested host: Pi `0.85.1`; Node.js `22.23.4+`.
 
 pi-ui is the single interface package: the startup header (Pi's own by default, or a pixel-art logo; formerly `@prjct.app/pi-header`), transcript times, compact tool activity (formerly `@prjct.app/pi-activity`), the footer, and the palette (formerly `@prjct.app/pi-palette`). Each part is switched with `/ui` and stored in `$PRJCT_HOME/pi-ui/settings.json`, defaulting to `~/.prjct/pi-ui/settings.json`.
 
