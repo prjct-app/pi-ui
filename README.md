@@ -97,7 +97,7 @@ The bundled `prjct-theme` dark palette is offered, never applied for you. Select
 
 ## Compatibility
 
-Tested with Pi `0.85.1` and Node.js `22.19+`. The header, transcript, activity widget, and footer require TUI mode; tools render compactly wherever Pi renders them.
+Tested with Pi `0.85.1` and Node.js `22.23.4+`. The header, transcript, activity widget, and footer require TUI mode; tools render compactly wherever Pi renders them.
 
 ## Development
 
